@@ -68,6 +68,14 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxKeysPreference = findPreference("termnx_keys");
+            if (termnxKeysPreference != null) {
+                termnxKeysPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.keys.TermnxKeysActivity.class));
+                    return true;
+                });
+            }
+
             new Thread() {
                 @Override
                 public void run() {

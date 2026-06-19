@@ -54,6 +54,7 @@ public class TermuxTerminalExtraKeys extends TerminalExtraKeys {
             // Check {@link #getExtraKeysInternalPropertyValueFromValue(String)} and
             // {@link #getExtraKeysStyleInternalPropertyValueFromValue(String)}
             String extrakeys = (String) mActivity.getProperties().getInternalPropertyValue(TermuxPropertyConstants.KEY_EXTRA_KEYS, true);
+            extrakeys = com.termux.app.keys.TermnxKeysPrefs.appendCustomRow(mActivity, extrakeys);
             String extraKeysStyle = (String) mActivity.getProperties().getInternalPropertyValue(TermuxPropertyConstants.KEY_EXTRA_KEYS_STYLE, true);
 
             ExtraKeysConstants.ExtraKeyDisplayMap extraKeyDisplayMap = ExtraKeysInfo.getCharDisplayMapForStyle(extraKeysStyle);
@@ -75,6 +76,10 @@ public class TermuxTerminalExtraKeys extends TerminalExtraKeys {
                 mExtraKeysInfo = null;
             }
         }
+    }
+
+    public void reload() {
+        setExtraKeys();
     }
 
     public ExtraKeysInfo getExtraKeysInfo() {

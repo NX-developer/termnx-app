@@ -7,6 +7,12 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_keys"
+        app:title="Ekstra Tuşlar"
+        app:summary="Alt tuş satırına kendi tuşlarını ekle"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termux"
         app:title="@string/termux_preferences_title"
         app:summary="@string/termux_preferences_summary"
