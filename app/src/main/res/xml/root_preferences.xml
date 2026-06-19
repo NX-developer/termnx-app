@@ -13,6 +13,12 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_backup"
+        app:title="Yedekleme"
+        app:summary="Ayarları dışa aktar / geri yükle"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termux"
         app:title="@string/termux_preferences_title"
         app:summary="@string/termux_preferences_summary"
