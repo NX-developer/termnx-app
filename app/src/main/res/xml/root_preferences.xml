@@ -3,19 +3,25 @@
     <Preference
         app:key="termnx_ai"
         app:title="Termnx AI"
-        app:summary="Terminale gömülü yapay zeka asistanı"
+        app:summary="In-terminal AI assistant"
         app:persistent="false"/>
 
     <Preference
         app:key="termnx_keys"
-        app:title="Ekstra Tuşlar"
-        app:summary="Alt tuş satırına kendi tuşlarını ekle"
+        app:title="Extra Keys"
+        app:summary="Customize the bottom key row"
         app:persistent="false"/>
 
     <Preference
         app:key="termnx_backup"
-        app:title="Yedekleme"
-        app:summary="Ayarları dışa aktar / geri yükle"
+        app:title="Backup"
+        app:summary="Export / restore your settings"
+        app:persistent="false"/>
+
+    <Preference
+        app:key="termnx_donate"
+        app:title="Donate to Termux"
+        app:summary="Support the upstream Termux project that Termnx is based on"
         app:persistent="false"/>
 
     <Preference

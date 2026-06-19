@@ -13,6 +13,7 @@ public class TermnxKeysPrefs {
 
     private static final String PREFS_NAME = "termnx_keys";
     private static final String KEY_CUSTOM = "custom_keys";
+    private static final String KEY_CUSTOMIZED = "customized";
 
     public static class CustomKey {
         public final String label;
@@ -28,6 +29,10 @@ public class TermnxKeysPrefs {
 
     public TermnxKeysPrefs(Context context) {
         this.prefs = context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    public boolean isCustomized() {
+        return prefs.getBoolean(KEY_CUSTOMIZED, false);
     }
 
     public List<CustomKey> getKeys() {
@@ -49,7 +54,7 @@ public class TermnxKeysPrefs {
         return keys;
     }
 
-    public void saveKeys(List<CustomKey> keys) {
+    public void save(List<CustomKey> keys) {
         JSONArray array = new JSONArray();
         for (CustomKey key : keys) {
             try {
@@ -60,48 +65,70 @@ public class TermnxKeysPrefs {
             } catch (Exception ignored) {
             }
         }
-        prefs.edit().putString(KEY_CUSTOM, array.toString()).apply();
+        prefs.edit().putString(KEY_CUSTOM, array.toString()).putBoolean(KEY_CUSTOMIZED, true).apply();
     }
 
-    public void addKey(String label, String value) {
-        List<CustomKey> keys = getKeys();
-        keys.add(new CustomKey(label, value));
-        saveKeys(keys);
+    public void reset() {
+        prefs.edit().remove(KEY_CUSTOM).putBoolean(KEY_CUSTOMIZED, false).apply();
     }
 
-    public void removeAt(int index) {
-        List<CustomKey> keys = getKeys();
-        if (index >= 0 && index < keys.size()) {
-            keys.remove(index);
-            saveKeys(keys);
+    public static List<CustomKey> defaultSeed() {
+        String[] values = {"ESC", "/", "-", "HOME", "UP", "END", "PGUP",
+            "TAB", "CTRL", "ALT", "LEFT", "DOWN", "RIGHT", "PGDN", "ENTER"};
+        List<CustomKey> list = new ArrayList<>();
+        for (String value : values) {
+            list.add(new CustomKey(value, value));
         }
+        return list;
     }
 
     private static String sanitize(String value) {
         return value.replace("\\", "").replace("'", "").replace("\n", " ").trim();
     }
 
-    public static String appendCustomRow(Context context, String layout) {
-        if (layout == null) return null;
-        List<CustomKey> keys = new TermnxKeysPrefs(context).getKeys();
-        if (keys.isEmpty()) return layout;
+    public static String buildLayout(Context context, String defaultLayout) {
+        TermnxKeysPrefs prefs = new TermnxKeysPrefs(context);
+        if (!prefs.isCustomized()) return defaultLayout;
+        List<CustomKey> keys = prefs.getKeys();
+        if (keys.isEmpty()) return defaultLayout;
 
-        StringBuilder row = new StringBuilder("[");
-        boolean first = true;
+        StringBuilder layout = new StringBuilder("[");
+        int perRow = 7;
+        int count = 0;
+        boolean rowOpen = false;
+        boolean firstRow = true;
+        boolean firstInRow = true;
         for (CustomKey key : keys) {
             String value = sanitize(key.value);
             String label = sanitize(key.label);
             if (value.isEmpty()) continue;
-            if (!first) row.append(", ");
-            row.append("{key: '").append(value).append("', display: '")
-                .append(label.isEmpty() ? value : label).append("'}");
-            first = false;
-        }
-        row.append("]");
-        if (first) return layout;
 
-        int idx = layout.lastIndexOf(']');
-        if (idx < 0) return layout;
-        return layout.substring(0, idx) + ", " + row + "]";
+            if (!rowOpen) {
+                if (!firstRow) layout.append(", ");
+                layout.append("[");
+                rowOpen = true;
+                firstInRow = true;
+            }
+            if (!firstInRow) layout.append(", ");
+            if (label.isEmpty() || label.equals(value)) {
+                layout.append("'").append(value).append("'");
+            } else {
+                layout.append("{key: '").append(value).append("', display: '").append(label).append("'}");
+            }
+            firstInRow = false;
+            count++;
+
+            if (count % perRow == 0) {
+                layout.append("]");
+                rowOpen = false;
+                firstRow = false;
+            }
+        }
+        if (rowOpen) {
+            layout.append("]");
+        }
+        layout.append("]");
+        if (count == 0) return defaultLayout;
+        return layout.toString();
     }
 }

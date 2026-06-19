@@ -84,6 +84,18 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxDonatePreference = findPreference("termnx_donate");
+            if (termnxDonatePreference != null) {
+                termnxDonatePreference.setOnPreferenceClickListener(preference -> {
+                    try {
+                        startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://termux.dev/donate")));
+                    } catch (Exception ignored) {
+                    }
+                    return true;
+                });
+            }
+
             new Thread() {
                 @Override
                 public void run() {

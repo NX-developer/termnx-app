@@ -35,7 +35,7 @@ public class TermnxBackupActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTitle("Yedekleme");
+        setTitle("Backup");
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
@@ -46,19 +46,19 @@ public class TermnxBackupActivity extends AppCompatActivity {
         root.setPadding(dp(16), dp(16), dp(16), dp(16));
 
         TextView info = new TextView(this);
-        info.setText("Tüm uygulama ayarlarını, ~/.termux yapılandırmasını ve önemli dotfile'ları (.bashrc, .vimrc vb.) "
-            + "tek bir dosyaya dışa aktar. Yeniden kurduğunda bu dosyayı seçip her şeyi geri yükle. "
-            + "Dosyayı uygulama dışında bir yere (ör. İndirilenler) kaydet ki kaldırınca kaybolmasın.");
+        info.setText("Export all app settings, your ~/.termux configuration and key dotfiles (.bashrc, .vimrc, etc.) "
+            + "into a single file. After a reinstall, pick that file to restore everything. "
+            + "Save it outside the app (e.g. Downloads) so it survives uninstalling.");
         info.setTextColor(COLOR_DIM);
         info.setTextSize(13f);
 
         Button exportButton = new Button(this);
-        exportButton.setText("Dışa aktar");
+        exportButton.setText("Export");
         exportButton.setOnClickListener(v -> startExport());
         exportButton.setLayoutParams(buttonParams());
 
         Button importButton = new Button(this);
-        importButton.setText("İçe aktar (geri yükle)");
+        importButton.setText("Import (restore)");
         importButton.setOnClickListener(v -> startImport());
         importButton.setLayoutParams(buttonParams());
 
@@ -90,7 +90,7 @@ public class TermnxBackupActivity extends AppCompatActivity {
         try {
             startActivityForResult(intent, REQUEST_EXPORT);
         } catch (Exception e) {
-            status.setText("Dosya seçici açılamadı: " + e.getMessage());
+            status.setText("Could not open file picker: " + e.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ public class TermnxBackupActivity extends AppCompatActivity {
         try {
             startActivityForResult(intent, REQUEST_IMPORT);
         } catch (Exception e) {
-            status.setText("Dosya seçici açılamadı: " + e.getMessage());
+            status.setText("Could not open file picker: " + e.getMessage());
         }
     }
 
@@ -120,14 +120,14 @@ public class TermnxBackupActivity extends AppCompatActivity {
     }
 
     private void runExport(final Uri uri) {
-        status.setText("Dışa aktarılıyor...");
+        status.setText("Exporting...");
         new Thread(() -> {
             String message;
             try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
-                if (out == null) throw new RuntimeException("Çıkış akışı açılamadı");
+                if (out == null) throw new RuntimeException("Could not open output stream");
                 message = BackupManager.exportToStream(this, out);
             } catch (Exception e) {
-                message = "Dışa aktarma hatası: " + e.getMessage();
+                message = "Export error: " + e.getMessage();
             }
             final String result = message;
             main.post(() -> status.setText(result));
@@ -135,14 +135,14 @@ public class TermnxBackupActivity extends AppCompatActivity {
     }
 
     private void runImport(final Uri uri) {
-        status.setText("Geri yükleniyor...");
+        status.setText("Restoring...");
         new Thread(() -> {
             String message;
             try (InputStream in = getContentResolver().openInputStream(uri)) {
-                if (in == null) throw new RuntimeException("Giriş akışı açılamadı");
+                if (in == null) throw new RuntimeException("Could not open input stream");
                 message = BackupManager.importFromStream(this, in);
             } catch (Exception e) {
-                message = "Geri yükleme hatası: " + e.getMessage();
+                message = "Restore error: " + e.getMessage();
             }
             final String result = message;
             main.post(() -> status.setText(result));

@@ -67,7 +67,7 @@ public class AiAgent {
             + "After the command runs you will receive a user message with its output and exit code, then you continue. "
             + "Make installs non-interactive (use 'pkg install -y' or 'apt -y'). Avoid destructive commands unless explicitly asked. "
             + "When the task is finished, reply with a normal message (no RUN line) that explains the result. "
-            + "Always reply to the user in Turkish unless they write in another language. Keep answers concise.\n\n"
+            + "Always reply to the user in the same language they write in. Keep answers concise.\n\n"
             + "You can install developer CLI agents on request. Before installing an npm tool, ensure prerequisites first: "
             + "'pkg install -y nodejs git' for Node tools, 'pkg install -y python' for Python tools. "
             + "Known install methods (verify each step from the output and adapt if it fails):\n"
@@ -89,12 +89,12 @@ public class AiAgent {
 
     public void sendUserMessage(final String text) {
         if (busy.get()) {
-            listener.onError("Asistan meşgul, lütfen bekleyin.");
+            listener.onError("Assistant is busy, please wait.");
             return;
         }
         String apiKey = prefs.getApiKey();
         if (apiKey == null || apiKey.isEmpty()) {
-            listener.onError("OpenRouter API anahtarı ayarlı değil. Ayarlardan ekleyin.");
+            listener.onError("OpenRouter API key is not set. Add it in Settings.");
             return;
         }
         messages.add(new OpenRouterClient.Message("user", text));
@@ -115,7 +115,7 @@ public class AiAgent {
                 try {
                     assistant = client.complete(messages);
                 } catch (Exception e) {
-                    listener.onError("Model hatası: " + e.getMessage());
+                    listener.onError("Model error: " + e.getMessage());
                     return;
                 }
                 messages.add(new OpenRouterClient.Message("assistant", assistant));
@@ -142,7 +142,7 @@ public class AiAgent {
                     try {
                         approved = decisionQueue.take();
                     } catch (InterruptedException e) {
-                        listener.onError("Onay beklenirken kesildi.");
+                        listener.onError("Interrupted while waiting for approval.");
                         return;
                     }
                 }
@@ -166,7 +166,7 @@ public class AiAgent {
                 messages.add(new OpenRouterClient.Message("user",
                     "OUTPUT (exit=" + result.exitCode + "):\n" + forModel));
             }
-            listener.onError("Maksimum adım sayısına ulaşıldı.");
+            listener.onError("Reached the maximum number of steps.");
         } finally {
             busy.set(false);
             listener.onBusyChanged(false);

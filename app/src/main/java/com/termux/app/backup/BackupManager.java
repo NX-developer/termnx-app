@@ -75,7 +75,7 @@ public class BackupManager {
 
         output.write(root.toString().getBytes(StandardCharsets.UTF_8));
         output.flush();
-        return prefsCount + " ayar grubu, " + filesCount + " yapılandırma dosyası dışa aktarıldı.";
+        return "Exported " + prefsCount + " preference groups and " + filesCount + " config files.";
     }
 
     public static String importFromStream(Context context, InputStream input) throws Exception {
@@ -110,7 +110,7 @@ public class BackupManager {
                 filesCount++;
             }
         }
-        return prefsCount + " ayar grubu, " + filesCount + " dosya geri yüklendi. Tam etki için uygulamayı yeniden başlat.";
+        return "Restored " + prefsCount + " preference groups and " + filesCount + " files. Restart the app for full effect.";
     }
 
     private static JSONObject serializePrefs(SharedPreferences prefs) throws Exception {

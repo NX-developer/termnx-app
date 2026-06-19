@@ -78,7 +78,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         input = new EditText(this);
-        input.setHint("Bir şey sor veya bir görev ver...");
+        input.setHint("Ask something or give a task...");
         input.setHintTextColor(COLOR_DIM);
         input.setTextColor(COLOR_TEXT);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
@@ -88,7 +88,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
             ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         sendButton = new Button(this);
-        sendButton.setText("Gönder");
+        sendButton.setText("Send");
         sendButton.setOnClickListener(v -> onSend());
 
         inputRow.addView(input);
@@ -101,9 +101,9 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         String terminalContext = getIntent() != null ? getIntent().getStringExtra(EXTRA_TRANSCRIPT) : null;
         agent = new AiAgent(this, this, terminalContext);
 
-        addBubble("Termnx AI hazır. Örnek: \"python kurulu mu, çalışıyor mu test et\".", COLOR_ASSISTANT, COLOR_TEXT, false);
+        addBubble("Termnx AI is ready. Example: \"check if python is installed and test it works\".", COLOR_ASSISTANT, COLOR_TEXT, false);
         if (prefs.getApiKey().isEmpty()) {
-            addBubble("Önce menüden Ayarlar'a girip OpenRouter API anahtarını ekle.", COLOR_ERROR, COLOR_TEXT, false);
+            addBubble("Open Settings from the menu and add your OpenRouter API key first.", COLOR_ERROR, COLOR_TEXT, false);
         }
     }
 
@@ -117,11 +117,11 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, 1, Menu.NONE, "Ayarlar");
-        fullAccessItem = menu.add(Menu.NONE, 2, Menu.NONE, "Tüm izinler");
+        menu.add(Menu.NONE, 1, Menu.NONE, "Settings");
+        fullAccessItem = menu.add(Menu.NONE, 2, Menu.NONE, "Full access");
         fullAccessItem.setCheckable(true);
         fullAccessItem.setChecked(prefs.isFullAccess());
-        editModeItem = menu.add(Menu.NONE, 3, Menu.NONE, "Değiştirme modu (Ctrl+A)");
+        editModeItem = menu.add(Menu.NONE, 3, Menu.NONE, "Edit mode (Ctrl+A)");
         editModeItem.setCheckable(true);
         editModeItem.setChecked(prefs.isEditMode());
         return true;
@@ -140,8 +140,8 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
             item.setChecked(newValue);
             prefs.setFullAccess(newValue);
             addBubble(newValue
-                ? "Tüm izinler açık: AI hiçbir komut için onay istemez (silme dahil). Dikkatli ol."
-                : "Tüm izinler kapalı.", COLOR_OUTPUT, COLOR_DIM, true);
+                ? "Full access on: the AI runs every command without asking (including delete). Be careful."
+                : "Full access off.", COLOR_OUTPUT, COLOR_DIM, true);
             return true;
         } else if (item.getItemId() == 3) {
             toggleEditMode();
@@ -155,8 +155,8 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         prefs.setEditMode(newValue);
         if (editModeItem != null) editModeItem.setChecked(newValue);
         addBubble(newValue
-            ? "Değiştirme modu açık: dosya düzenleme komutları sormadan çalışır. Silme yine onay ister."
-            : "Değiştirme modu kapalı: dosya düzenleme için de onay istenir.", COLOR_OUTPUT, COLOR_DIM, true);
+            ? "Edit mode on: file edit commands run without asking. Delete still asks for approval."
+            : "Edit mode off: file edits also ask for approval.", COLOR_OUTPUT, COLOR_DIM, true);
     }
 
     @Override
@@ -174,7 +174,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         layout.setPadding(dp(20), dp(10), dp(20), dp(10));
 
         final EditText apiKeyField = new EditText(this);
-        apiKeyField.setHint("OpenRouter API anahtarı");
+        apiKeyField.setHint("OpenRouter API key");
         apiKeyField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         apiKeyField.setText(prefs.getApiKey());
 
@@ -186,7 +186,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         baseUrlField.setHint("API URL");
         baseUrlField.setText(prefs.getBaseUrl());
 
-        layout.addView(labelView("API anahtarı"));
+        layout.addView(labelView("API key"));
         layout.addView(apiKeyField);
         layout.addView(labelView("Model"));
         layout.addView(modelField);
@@ -194,15 +194,15 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         layout.addView(baseUrlField);
 
         new AlertDialog.Builder(this)
-            .setTitle("Termnx AI Ayarları")
+            .setTitle("Termnx AI Settings")
             .setView(layout)
-            .setPositiveButton("Kaydet", (dialog, which) -> {
+            .setPositiveButton("Save", (dialog, which) -> {
                 prefs.setApiKey(apiKeyField.getText().toString());
                 prefs.setModel(modelField.getText().toString());
                 prefs.setBaseUrl(baseUrlField.getText().toString());
-                addBubble("Ayarlar kaydedildi.", COLOR_OUTPUT, COLOR_DIM, true);
+                addBubble("Settings saved.", COLOR_OUTPUT, COLOR_DIM, true);
             })
-            .setNegativeButton("İptal", null)
+            .setNegativeButton("Cancel", null)
             .show();
     }
 
@@ -253,7 +253,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         chip.setTextSize(11f);
 
         TextView label = new TextView(this);
-        label.setText("onay bekliyor:");
+        label.setText("awaiting approval:");
         label.setTextColor(COLOR_DIM);
         label.setTextSize(11f);
 
@@ -268,9 +268,9 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         buttons.setOrientation(LinearLayout.HORIZONTAL);
 
         final Button run = new Button(this);
-        run.setText("Çalıştır");
+        run.setText("Run");
         final Button skip = new Button(this);
-        skip.setText("Atla");
+        skip.setText("Skip");
 
         run.setOnClickListener(v -> {
             run.setEnabled(false);
@@ -319,7 +319,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
 
     @Override
     public void onCommandRunning(String command) {
-        runOnUiThread(() -> addBubble("Çalışıyor: " + command, COLOR_OUTPUT, COLOR_DIM, true));
+        runOnUiThread(() -> addBubble("Running: " + command, COLOR_OUTPUT, COLOR_DIM, true));
     }
 
     @Override
@@ -327,7 +327,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         runOnUiThread(() -> {
             String shown = output == null ? "" : output;
             if (shown.length() > 4000) {
-                shown = shown.substring(0, 4000) + "\n... (kısaltıldı)";
+                shown = shown.substring(0, 4000) + "\n... (truncated)";
             }
             addBubble("exit=" + exitCode + "\n" + shown, COLOR_OUTPUT, COLOR_TEXT, true);
         });
@@ -342,7 +342,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
     public void onBusyChanged(boolean busy) {
         runOnUiThread(() -> {
             sendButton.setEnabled(!busy);
-            sendButton.setText(busy ? "..." : "Gönder");
+            sendButton.setText(busy ? "..." : "Send");
         });
     }
 
