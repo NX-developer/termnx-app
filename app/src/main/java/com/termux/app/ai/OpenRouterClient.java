@@ -3,6 +3,7 @@ package com.termux.app.ai;
 import androidx.annotation.NonNull;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -80,7 +81,7 @@ public class OpenRouterClient {
         }
     }
 
-    private String extractContent(String response) {
+    private String extractContent(String response) throws JSONException {
         JSONObject root = new JSONObject(response);
         JSONArray choices = root.optJSONArray("choices");
         if (choices == null || choices.length() == 0) {
