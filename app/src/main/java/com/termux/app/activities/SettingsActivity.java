@@ -76,6 +76,14 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxThemePreference = findPreference("termnx_theme");
+            if (termnxThemePreference != null) {
+                termnxThemePreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.theme.TermnxThemeActivity.class));
+                    return true;
+                });
+            }
+
             Preference termnxBackupPreference = findPreference("termnx_backup");
             if (termnxBackupPreference != null) {
                 termnxBackupPreference.setOnPreferenceClickListener(preference -> {

@@ -319,6 +319,16 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mTermuxTerminalExtraKeys != null && mExtraKeysView != null) {
             mTermuxTerminalExtraKeys.reload();
             mExtraKeysView.reload(mTermuxTerminalExtraKeys.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
+            com.termux.app.theme.TermnxThemePrefs themePrefs = new com.termux.app.theme.TermnxThemePrefs(this);
+            int keyText = themePrefs.getExtraKeyTextColor();
+            if (keyText != com.termux.app.theme.TermnxThemePrefs.UNSET) mExtraKeysView.setButtonTextColor(keyText);
+            int keyActive = themePrefs.getExtraKeyActiveColor();
+            if (keyActive != com.termux.app.theme.TermnxThemePrefs.UNSET) mExtraKeysView.setButtonActiveTextColor(keyActive);
+            mExtraKeysView.invalidate();
+        }
+
+        if (mTermuxTerminalSessionActivityClient != null) {
+            mTermuxTerminalSessionActivityClient.checkForFontAndColors();
         }
 
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
