@@ -46,10 +46,12 @@ jobs:
           seen = set()
           for line in lines:
               s = line.rstrip("\n")
-              if (s.startswith("e: ") or s.startswith("> ") or "error:" in s.lower()
+              if (s.startswith("e: ") or "error:" in s.lower()
                       or "FAILURE:" in s or "What went wrong" in s or "Caused by:" in s
-                      or "Exception" in s or "Unresolved reference" in s
-                      or re.search(r"\.(kt|java|xml):\d+", s) or ("Task" in s and "FAILED" in s)):
+                      or "Unresolved reference" in s or "cannot find symbol" in s
+                      or "incompatible types" in s or "is not abstract" in s
+                      or re.search(r"\.(kt|java|xml):\d+", s)
+                      or ("Task" in s and "FAILED" in s)):
                   if s not in seen:
                       seen.add(s)
                       key.append(s)
