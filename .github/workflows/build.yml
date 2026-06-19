@@ -72,5 +72,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: TermNX-debug
+          name: Termnx-debug
           path: app/build/outputs/apk/debug/*.apk
