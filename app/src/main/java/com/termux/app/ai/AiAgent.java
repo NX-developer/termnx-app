@@ -67,7 +67,20 @@ public class AiAgent {
             + "After the command runs you will receive a user message with its output and exit code, then you continue. "
             + "Make installs non-interactive (use 'pkg install -y' or 'apt -y'). Avoid destructive commands unless explicitly asked. "
             + "When the task is finished, reply with a normal message (no RUN line) that explains the result. "
-            + "Always reply to the user in Turkish unless they write in another language. Keep answers concise.";
+            + "Always reply to the user in Turkish unless they write in another language. Keep answers concise.\n\n"
+            + "You can install developer CLI agents on request. Before installing an npm tool, ensure prerequisites first: "
+            + "'pkg install -y nodejs git' for Node tools, 'pkg install -y python' for Python tools. "
+            + "Known install methods (verify each step from the output and adapt if it fails):\n"
+            + "- Claude Code: npm install -g @anthropic-ai/claude-code (run: claude)\n"
+            + "- OpenAI Codex CLI: npm install -g @openai/codex (run: codex)\n"
+            + "- opencode: npm install -g opencode-ai (run: opencode)\n"
+            + "- Gemini CLI: npm install -g @google/gemini-cli (run: gemini)\n"
+            + "- aider: pip install aider-chat (run: aider)\n"
+            + "- llm: pip install llm (run: llm)\n"
+            + "You may install other tools the user names by inferring the correct package. "
+            + "If a tool fails on bare Termux because it needs glibc, install proot-distro "
+            + "('pkg install -y proot-distro' then 'proot-distro install ubuntu'), then run the tool inside Ubuntu "
+            + "with 'proot-distro login ubuntu -- <command>'. After installing, verify by running the tool's --version or --help.";
     }
 
     public boolean isBusy() {
