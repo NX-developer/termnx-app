@@ -218,6 +218,30 @@ final class TermuxInstaller {
 
                     Logger.logInfo(LOG_TAG, "Bootstrap packages installed successfully.");
 
+                    try {
+                        File motdFile = new File(TERMUX_PREFIX_DIR, "etc/motd");
+                        File motdDir = motdFile.getParentFile();
+                        if (motdDir != null && !motdDir.exists()) {
+                            motdDir.mkdirs();
+                        }
+                        String motd = "Welcome to Termnx!\n\n"
+                            + "An unofficial Termux-based terminal.\n\n"
+                            + "Working with packages:\n\n"
+                            + " - Search:  pkg search <query>\n"
+                            + " - Install: pkg install <package>\n"
+                            + " - Upgrade: pkg upgrade\n\n"
+                            + "Subscribing to additional repositories:\n\n"
+                            + " - Root:    pkg install root-repo\n"
+                            + " - X11:     pkg install x11-repo\n\n"
+                            + "For fixing any repository issues,\n"
+                            + "try 'termux-change-repo' command.\n";
+                        try (FileOutputStream motdStream = new FileOutputStream(motdFile)) {
+                            motdStream.write(motd.getBytes("UTF-8"));
+                        }
+                    } catch (Exception motdError) {
+                        Logger.logError(LOG_TAG, "Failed to write Termnx motd: " + motdError.getMessage());
+                    }
+
                     // Recreate env file since termux prefix was wiped earlier
                     TermuxShellEnvironment.writeEnvironmentToFile(activity);
 
