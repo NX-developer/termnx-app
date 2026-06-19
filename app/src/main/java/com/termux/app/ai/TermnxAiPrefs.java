@@ -8,7 +8,8 @@ public class TermnxAiPrefs {
     private static final String PREFS_NAME = "termnx_ai";
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_MODEL = "model";
-    private static final String KEY_AUTO_RUN = "auto_run";
+    private static final String KEY_FULL_ACCESS = "auto_run";
+    private static final String KEY_EDIT_MODE = "edit_mode";
     private static final String KEY_BASE_URL = "base_url";
 
     public static final String DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
@@ -46,11 +47,19 @@ public class TermnxAiPrefs {
         prefs.edit().putString(KEY_BASE_URL, value == null ? DEFAULT_BASE_URL : value.trim()).apply();
     }
 
-    public boolean isAutoRun() {
-        return prefs.getBoolean(KEY_AUTO_RUN, false);
+    public boolean isFullAccess() {
+        return prefs.getBoolean(KEY_FULL_ACCESS, false);
     }
 
-    public void setAutoRun(boolean value) {
-        prefs.edit().putBoolean(KEY_AUTO_RUN, value).apply();
+    public void setFullAccess(boolean value) {
+        prefs.edit().putBoolean(KEY_FULL_ACCESS, value).apply();
+    }
+
+    public boolean isEditMode() {
+        return prefs.getBoolean(KEY_EDIT_MODE, false);
+    }
+
+    public void setEditMode(boolean value) {
+        prefs.edit().putBoolean(KEY_EDIT_MODE, value).apply();
     }
 }

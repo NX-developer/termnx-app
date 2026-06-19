@@ -17,9 +17,9 @@ public class AiAgent {
     public interface Listener {
         void onAssistantMessage(String text);
 
-        void onCommandProposed(String command);
+        void onCommandProposed(String command, CommandPolicy.ActionType type);
 
-        void onCommandAutoRun(String command);
+        void onCommandAutoRun(String command, CommandPolicy.ActionType type);
 
         void onCommandRunning(String command);
 
@@ -119,12 +119,13 @@ public class AiAgent {
                 }
 
                 boolean approved;
-                if (prefs.isAutoRun()) {
-                    listener.onCommandAutoRun(command);
+                CommandPolicy.ActionType type = CommandPolicy.classify(command);
+                if (CommandPolicy.autoApprove(type, prefs.isFullAccess(), prefs.isEditMode())) {
+                    listener.onCommandAutoRun(command, type);
                     approved = true;
                 } else {
                     decisionQueue.clear();
-                    listener.onCommandProposed(command);
+                    listener.onCommandProposed(command, type);
                     try {
                         approved = decisionQueue.take();
                     } catch (InterruptedException e) {

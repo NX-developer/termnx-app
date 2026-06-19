@@ -60,6 +60,14 @@ public class SettingsActivity extends AppCompatActivity {
 
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
+            Preference termnxAiPreference = findPreference("termnx_ai");
+            if (termnxAiPreference != null) {
+                termnxAiPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.ai.TermnxAiActivity.class));
+                    return true;
+                });
+            }
+
             new Thread() {
                 @Override
                 public void run() {

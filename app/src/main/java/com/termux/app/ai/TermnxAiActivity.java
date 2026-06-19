@@ -39,7 +39,8 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
     private ScrollView scrollView;
     private EditText input;
     private Button sendButton;
-    private MenuItem autoRunItem;
+    private MenuItem fullAccessItem;
+    private MenuItem editModeItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,9 +118,12 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(Menu.NONE, 1, Menu.NONE, "Ayarlar");
-        autoRunItem = menu.add(Menu.NONE, 2, Menu.NONE, "Otomatik çalıştır");
-        autoRunItem.setCheckable(true);
-        autoRunItem.setChecked(prefs.isAutoRun());
+        fullAccessItem = menu.add(Menu.NONE, 2, Menu.NONE, "Tüm izinler");
+        fullAccessItem.setCheckable(true);
+        fullAccessItem.setChecked(prefs.isFullAccess());
+        editModeItem = menu.add(Menu.NONE, 3, Menu.NONE, "Değiştirme modu (Ctrl+A)");
+        editModeItem.setCheckable(true);
+        editModeItem.setChecked(prefs.isEditMode());
         return true;
     }
 
@@ -134,13 +138,34 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         } else if (item.getItemId() == 2) {
             boolean newValue = !item.isChecked();
             item.setChecked(newValue);
-            prefs.setAutoRun(newValue);
+            prefs.setFullAccess(newValue);
             addBubble(newValue
-                ? "Otomatik çalıştırma açık: komutlar onay beklemeden çalışır."
-                : "Otomatik çalıştırma kapalı: her komut için onay istenir.", COLOR_OUTPUT, COLOR_DIM, true);
+                ? "Tüm izinler açık: AI hiçbir komut için onay istemez (silme dahil). Dikkatli ol."
+                : "Tüm izinler kapalı.", COLOR_OUTPUT, COLOR_DIM, true);
+            return true;
+        } else if (item.getItemId() == 3) {
+            toggleEditMode();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void toggleEditMode() {
+        boolean newValue = !prefs.isEditMode();
+        prefs.setEditMode(newValue);
+        if (editModeItem != null) editModeItem.setChecked(newValue);
+        addBubble(newValue
+            ? "Değiştirme modu açık: dosya düzenleme komutları sormadan çalışır. Silme yine onay ister."
+            : "Değiştirme modu kapalı: dosya düzenleme için de onay istenir.", COLOR_OUTPUT, COLOR_DIM, true);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
+        if (keyCode == android.view.KeyEvent.KEYCODE_A && event.isCtrlPressed()) {
+            toggleEditMode();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     private void showSettingsDialog() {
@@ -210,7 +235,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         scrollToBottom();
     }
 
-    private void addCommandCard(final String command) {
+    private void addCommandCard(final String command, final CommandPolicy.ActionType type) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setBackgroundColor(COLOR_COMMAND);
@@ -221,8 +246,14 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         cardParams.bottomMargin = dp(4);
         card.setLayoutParams(cardParams);
 
+        TextView chip = new TextView(this);
+        chip.setText(CommandPolicy.label(type));
+        chip.setTextColor(CommandPolicy.color(type));
+        chip.setTypeface(Typeface.DEFAULT_BOLD);
+        chip.setTextSize(11f);
+
         TextView label = new TextView(this);
-        label.setText("Komut önerildi:");
+        label.setText("onay bekliyor:");
         label.setTextColor(COLOR_DIM);
         label.setTextSize(11f);
 
@@ -255,6 +286,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         buttons.addView(run);
         buttons.addView(skip);
 
+        card.addView(chip);
         card.addView(label);
         card.addView(cmd);
         card.addView(buttons);
@@ -276,13 +308,13 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
     }
 
     @Override
-    public void onCommandProposed(String command) {
-        runOnUiThread(() -> addCommandCard(command));
+    public void onCommandProposed(String command, CommandPolicy.ActionType type) {
+        runOnUiThread(() -> addCommandCard(command, type));
     }
 
     @Override
-    public void onCommandAutoRun(String command) {
-        runOnUiThread(() -> addBubble("$ " + command, COLOR_COMMAND, COLOR_GREEN, true));
+    public void onCommandAutoRun(String command, CommandPolicy.ActionType type) {
+        runOnUiThread(() -> addBubble("[" + CommandPolicy.label(type) + "] $ " + command, COLOR_COMMAND, COLOR_GREEN, true));
     }
 
     @Override
