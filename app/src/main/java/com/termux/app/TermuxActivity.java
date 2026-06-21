@@ -317,14 +317,14 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTermuxTerminalViewClient.onResume();
 
         if (mTermuxTerminalExtraKeys != null && mExtraKeysView != null) {
-            mTermuxTerminalExtraKeys.reload();
-            mExtraKeysView.reload(mTermuxTerminalExtraKeys.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
+            mExtraKeysView.setButtonTextAllCaps(false);
             com.termux.app.theme.TermnxThemePrefs themePrefs = new com.termux.app.theme.TermnxThemePrefs(this);
             int keyText = themePrefs.getExtraKeyTextColor();
             if (keyText != com.termux.app.theme.TermnxThemePrefs.UNSET) mExtraKeysView.setButtonTextColor(keyText);
             int keyActive = themePrefs.getExtraKeyActiveColor();
             if (keyActive != com.termux.app.theme.TermnxThemePrefs.UNSET) mExtraKeysView.setButtonActiveTextColor(keyActive);
-            mExtraKeysView.invalidate();
+            mTermuxTerminalExtraKeys.reload();
+            mExtraKeysView.reload(mTermuxTerminalExtraKeys.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
         }
 
         if (mTermuxTerminalSessionActivityClient != null) {

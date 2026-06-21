@@ -178,7 +178,7 @@ public final class ExtraKeysView extends GridLayout {
     protected int mButtonActiveBackgroundColor;
 
     /** Defines whether text for the extra keys button should be all capitalized automatically. */
-    protected boolean mButtonTextAllCaps = true;
+    protected boolean mButtonTextAllCaps = false;
 
 
     /**
