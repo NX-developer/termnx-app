@@ -110,6 +110,13 @@
             android:theme="@style/Theme.TermuxApp.DayNight.DarkActionBar" />
 
         <activity
+            android:name=".app.ai.TermnxAiSettingsActivity"
+            android:exported="false"
+            android:label="Termnx AI Settings"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.TermuxApp.DayNight.DarkActionBar" />
+
+        <activity
             android:name=".app.keys.TermnxKeysActivity"
             android:exported="false"
             android:label="Ekstra Tuşlar"

@@ -134,7 +134,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
             finish();
             return true;
         } else if (item.getItemId() == 1) {
-            showSettingsDialog();
+            startActivity(new android.content.Intent(this, TermnxAiSettingsActivity.class));
             return true;
         } else if (item.getItemId() == 2) {
             boolean newValue = !item.isChecked();
