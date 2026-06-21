@@ -102,7 +102,28 @@ public class TermuxSessionsListViewController extends ArrayAdapter<TermuxSession
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         final TermuxSession selectedSession = getItem(position);
-        mActivity.getTermuxTerminalSessionClient().renameSession(selectedSession.getTerminalSession());
+        final TerminalSession session = selectedSession.getTerminalSession();
+        String[] options = {"Rename", "Reset", "Close"};
+        new androidx.appcompat.app.AlertDialog.Builder(mActivity)
+            .setTitle(session.mSessionName != null && !session.mSessionName.isEmpty() ? session.mSessionName : "Session")
+            .setItems(options, (dialog, which) -> {
+                switch (which) {
+                    case 0:
+                        mActivity.getTermuxTerminalSessionClient().renameSession(session);
+                        break;
+                    case 1:
+                        session.reset();
+                        android.widget.Toast.makeText(mActivity, "Session reset", android.widget.Toast.LENGTH_SHORT).show();
+                        break;
+                    case 2:
+                        session.finishIfRunning();
+                        mActivity.getTermuxTerminalSessionClient().removeFinishedSession(session);
+                        break;
+                    default:
+                        break;
+                }
+            })
+            .show();
         return true;
     }
 

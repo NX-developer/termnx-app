@@ -84,6 +84,29 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxPerfPreference = findPreference("termnx_perf");
+            if (termnxPerfPreference != null) {
+                termnxPerfPreference.setOnPreferenceClickListener(preference -> {
+                    final String[] labels = {"2000 (default)", "1000", "500", "250"};
+                    final String[] values = {"2000", "1000", "500", "250"};
+                    new androidx.appcompat.app.AlertDialog.Builder(context)
+                        .setTitle("Scrollback lines")
+                        .setItems(labels, (dialog, which) -> {
+                            try {
+                                com.termux.app.perf.TermnxPropertiesWriter.setProperty("terminal-transcript-rows", values[which]);
+                                android.widget.Toast.makeText(context,
+                                    "Set to " + values[which] + ". Applies to new sessions.",
+                                    android.widget.Toast.LENGTH_LONG).show();
+                            } catch (Exception e) {
+                                android.widget.Toast.makeText(context,
+                                    "Failed: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .show();
+                    return true;
+                });
+            }
+
             Preference termnxBackupPreference = findPreference("termnx_backup");
             if (termnxBackupPreference != null) {
                 termnxBackupPreference.setOnPreferenceClickListener(preference -> {

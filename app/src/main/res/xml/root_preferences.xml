@@ -19,6 +19,12 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_perf"
+        app:title="Performance"
+        app:summary="Scrollback size to reduce scroll lag and freezes"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termnx_backup"
         app:title="Backup"
         app:summary="Export / restore your settings"
