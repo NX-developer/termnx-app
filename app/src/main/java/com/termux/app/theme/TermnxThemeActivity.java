@@ -28,6 +28,7 @@ public class TermnxThemeActivity extends AppCompatActivity {
     private TextView imageStatus;
 
     private static final int REQUEST_IMAGE = 5001;
+    private static final int REQUEST_VIDEO = 5002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +69,7 @@ public class TermnxThemeActivity extends AppCompatActivity {
             new int[]{0xFFFF7B72, 0xFFE3B341, 0xFF39D353, 0xFF58A6FF, 0xFFB392F0, 0xFFFFFFFF});
 
         TextView imageLabel = new TextView(this);
-        imageLabel.setText("Background image");
+        imageLabel.setText("Background image or video");
         imageLabel.setTextColor(COLOR_TEXT);
         imageLabel.setTextSize(14f);
         imageLabel.setPadding(0, dp(16), 0, dp(2));
@@ -77,7 +78,7 @@ public class TermnxThemeActivity extends AppCompatActivity {
         imageStatus = new TextView(this);
         imageStatus.setTextColor(COLOR_DIM);
         imageStatus.setTextSize(12f);
-        imageStatus.setText(prefs.hasBackgroundImage() ? "An image is set." : "No image set (using color).");
+        imageStatus.setText(currentBackgroundStatus());
         content.addView(imageStatus);
 
         LinearLayout imageRow = new LinearLayout(this);
@@ -86,19 +87,25 @@ public class TermnxThemeActivity extends AppCompatActivity {
 
         Button pickImage = new Button(this);
         pickImage.setText("Pick image");
-        pickImage.setOnClickListener(v -> pickImage());
+        pickImage.setOnClickListener(v -> pickMedia("image/*", REQUEST_IMAGE));
         pickImage.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
+        Button pickVideo = new Button(this);
+        pickVideo.setText("Pick video");
+        pickVideo.setOnClickListener(v -> pickMedia("video/*", REQUEST_VIDEO));
+        pickVideo.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
         Button removeImage = new Button(this);
-        removeImage.setText("Remove image");
+        removeImage.setText("Remove");
         removeImage.setOnClickListener(v -> {
-            prefs.clearBackgroundImage();
-            imageStatus.setText("No image set (using color).");
-            Toast.makeText(this, "Image removed. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+            prefs.clearBackground();
+            imageStatus.setText("No background set (using color).");
+            Toast.makeText(this, "Background removed. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
         });
         removeImage.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         imageRow.addView(pickImage);
+        imageRow.addView(pickVideo);
         imageRow.addView(removeImage);
         content.addView(imageRow);
 
@@ -194,14 +201,20 @@ public class TermnxThemeActivity extends AppCompatActivity {
         Toast.makeText(this, "Saved. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
     }
 
-    private void pickImage() {
+    private String currentBackgroundStatus() {
+        if (prefs.hasBackgroundVideo()) return "A video is set.";
+        if (prefs.hasBackgroundImage()) return "An image is set.";
+        return "No background set (using color).";
+    }
+
+    private void pickMedia(String type, int requestCode) {
         android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
+        intent.setType(type);
         intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         try {
-            startActivityForResult(intent, REQUEST_IMAGE);
+            startActivityForResult(intent, requestCode);
         } catch (Exception e) {
             Toast.makeText(this, "Could not open picker: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -210,17 +223,23 @@ public class TermnxThemeActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_IMAGE && resultCode == android.app.Activity.RESULT_OK
-            && data != null && data.getData() != null) {
-            android.net.Uri uri = data.getData();
-            try {
-                getContentResolver().takePersistableUriPermission(uri,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } catch (Exception ignored) {
-            }
+        if (resultCode != android.app.Activity.RESULT_OK || data == null || data.getData() == null) {
+            return;
+        }
+        android.net.Uri uri = data.getData();
+        try {
+            getContentResolver().takePersistableUriPermission(uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (Exception ignored) {
+        }
+        if (requestCode == REQUEST_IMAGE) {
             prefs.setBackgroundImageUri(uri.toString());
             if (imageStatus != null) imageStatus.setText("An image is set.");
             Toast.makeText(this, "Image set. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+        } else if (requestCode == REQUEST_VIDEO) {
+            prefs.setBackgroundVideoUri(uri.toString());
+            if (imageStatus != null) imageStatus.setText("A video is set.");
+            Toast.makeText(this, "Video set. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
         }
     }
 

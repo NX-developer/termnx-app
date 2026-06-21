@@ -175,6 +175,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private float mTerminalToolbarDefaultHeight;
 
+    private android.view.TextureView mTermnxVideoView;
+    private android.media.MediaPlayer mTermnxVideoPlayer;
+    private String mTermnxVideoUri;
+
 
     private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
     private static final int CONTEXT_MENU_SHARE_TRANSCRIPT_ID = 1;
@@ -339,7 +343,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
 
         com.termux.app.theme.TermnxThemePrefs bgPrefs = new com.termux.app.theme.TermnxThemePrefs(this);
-        if (bgPrefs.hasBackgroundImage()) {
+        if (bgPrefs.hasBackgroundVideo()) {
+            startTermnxVideoBackground(bgPrefs.getBackgroundVideoUri());
+            if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        } else if (bgPrefs.hasBackgroundImage()) {
+            releaseTermnxVideoBackground();
             android.graphics.drawable.Drawable bgImage =
                 com.termux.app.theme.TermnxThemePrefs.loadBackground(this, bgPrefs.getBackgroundImageUri());
             if (bgImage != null) {
@@ -348,6 +357,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
             }
         } else {
+            releaseTermnxVideoBackground();
             int termBg = bgPrefs.getTerminalBackground();
             if (termBg != com.termux.app.theme.TermnxThemePrefs.UNSET) {
                 if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(termBg);
@@ -372,6 +382,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         mIsVisible = false;
 
+        if (mTermnxVideoPlayer != null) {
+            try {
+                if (mTermnxVideoPlayer.isPlaying()) mTermnxVideoPlayer.pause();
+            } catch (Exception ignored) {
+            }
+        }
+
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onStop();
 
@@ -389,6 +406,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         super.onDestroy();
 
         Logger.logDebug(LOG_TAG, "onDestroy");
+
+        releaseTermnxVideoPlayer();
 
         if (mIsInvalidState) return;
 
@@ -875,6 +894,90 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     public TermuxActivityRootView getTermuxActivityRootView() {
         return mTermuxActivityRootView;
+    }
+
+    private void startTermnxVideoBackground(String uriString) {
+        if (uriString == null || uriString.isEmpty()) return;
+        getWindow().getDecorView().setBackgroundColor(android.graphics.Color.BLACK);
+        if (mTermnxVideoView == null) {
+            mTermnxVideoView = new android.view.TextureView(this);
+            android.view.ViewGroup parent = findViewById(R.id.activity_termux_root_relative_layout);
+            if (parent == null) {
+                mTermnxVideoView = null;
+                return;
+            }
+            android.widget.RelativeLayout.LayoutParams params = new android.widget.RelativeLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+            parent.addView(mTermnxVideoView, 0, params);
+            mTermnxVideoView.setSurfaceTextureListener(new android.view.TextureView.SurfaceTextureListener() {
+                @Override
+                public void onSurfaceTextureAvailable(android.graphics.SurfaceTexture surface, int width, int height) {
+                    if (mTermnxVideoUri != null) {
+                        openTermnxVideoPlayer(new android.view.Surface(surface), mTermnxVideoUri);
+                    }
+                }
+
+                @Override
+                public void onSurfaceTextureSizeChanged(android.graphics.SurfaceTexture surface, int width, int height) {
+                }
+
+                @Override
+                public boolean onSurfaceTextureDestroyed(android.graphics.SurfaceTexture surface) {
+                    releaseTermnxVideoPlayer();
+                    return true;
+                }
+
+                @Override
+                public void onSurfaceTextureUpdated(android.graphics.SurfaceTexture surface) {
+                }
+            });
+        }
+        mTermnxVideoUri = uriString;
+        mTermnxVideoView.setVisibility(View.VISIBLE);
+        if (mTermnxVideoView.isAvailable()) {
+            openTermnxVideoPlayer(new android.view.Surface(mTermnxVideoView.getSurfaceTexture()), uriString);
+        }
+    }
+
+    private void openTermnxVideoPlayer(android.view.Surface surface, String uriString) {
+        try {
+            releaseTermnxVideoPlayer();
+            mTermnxVideoPlayer = new android.media.MediaPlayer();
+            mTermnxVideoPlayer.setDataSource(this, android.net.Uri.parse(uriString));
+            mTermnxVideoPlayer.setSurface(surface);
+            mTermnxVideoPlayer.setLooping(true);
+            mTermnxVideoPlayer.setVolume(0f, 0f);
+            mTermnxVideoPlayer.setOnPreparedListener(mp -> {
+                try {
+                    mp.start();
+                } catch (Exception ignored) {
+                }
+            });
+            mTermnxVideoPlayer.setOnErrorListener((mp, what, extra) -> true);
+            mTermnxVideoPlayer.prepareAsync();
+        } catch (Exception e) {
+            releaseTermnxVideoPlayer();
+        }
+    }
+
+    private void releaseTermnxVideoPlayer() {
+        if (mTermnxVideoPlayer != null) {
+            try {
+                mTermnxVideoPlayer.reset();
+                mTermnxVideoPlayer.release();
+            } catch (Exception ignored) {
+            }
+            mTermnxVideoPlayer = null;
+        }
+    }
+
+    private void releaseTermnxVideoBackground() {
+        mTermnxVideoUri = null;
+        releaseTermnxVideoPlayer();
+        if (mTermnxVideoView != null) {
+            mTermnxVideoView.setVisibility(View.GONE);
+        }
     }
 
     public View getTermuxActivityBottomSpaceView() {

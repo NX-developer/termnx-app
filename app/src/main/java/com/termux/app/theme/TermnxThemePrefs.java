@@ -17,6 +17,7 @@ public class TermnxThemePrefs {
     private static final String KEY_KEY_TEXT = "extra_key_text";
     private static final String KEY_KEY_ACTIVE = "extra_key_active";
     private static final String KEY_BG_IMAGE = "background_image";
+    private static final String KEY_BG_VIDEO = "background_video";
 
     public static final int UNSET = 0;
 
@@ -47,7 +48,7 @@ public class TermnxThemePrefs {
     }
 
     public void setBackgroundImageUri(String uri) {
-        prefs.edit().putString(KEY_BG_IMAGE, uri == null ? "" : uri).apply();
+        prefs.edit().putString(KEY_BG_IMAGE, uri == null ? "" : uri).remove(KEY_BG_VIDEO).apply();
     }
 
     public void clearBackgroundImage() {
@@ -57,6 +58,23 @@ public class TermnxThemePrefs {
     public boolean hasBackgroundImage() {
         String uri = getBackgroundImageUri();
         return uri != null && !uri.isEmpty();
+    }
+
+    public String getBackgroundVideoUri() {
+        return prefs.getString(KEY_BG_VIDEO, "");
+    }
+
+    public void setBackgroundVideoUri(String uri) {
+        prefs.edit().putString(KEY_BG_VIDEO, uri == null ? "" : uri).remove(KEY_BG_IMAGE).apply();
+    }
+
+    public boolean hasBackgroundVideo() {
+        String uri = getBackgroundVideoUri();
+        return uri != null && !uri.isEmpty();
+    }
+
+    public void clearBackground() {
+        prefs.edit().remove(KEY_BG_IMAGE).remove(KEY_BG_VIDEO).apply();
     }
 
     public static android.graphics.drawable.Drawable loadBackground(Context context, String uriString) {
