@@ -90,7 +90,6 @@ public class TermnxKeysPrefs {
         TermnxKeysPrefs prefs = new TermnxKeysPrefs(context);
         if (!prefs.isCustomized()) return defaultLayout;
         List<CustomKey> keys = prefs.getKeys();
-        if (keys.isEmpty()) return defaultLayout;
 
         StringBuilder layout = new StringBuilder("[");
         int perRow = 7;
@@ -128,7 +127,7 @@ public class TermnxKeysPrefs {
             layout.append("]");
         }
         layout.append("]");
-        if (count == 0) return defaultLayout;
+        if (count == 0) return "[]";
         return layout.toString();
     }
 }
