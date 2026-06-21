@@ -25,6 +25,9 @@ public class TermnxThemeActivity extends AppCompatActivity {
     private EditText fgField;
     private EditText keyTextField;
     private EditText keyActiveField;
+    private TextView imageStatus;
+
+    private static final int REQUEST_IMAGE = 5001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +66,41 @@ public class TermnxThemeActivity extends AppCompatActivity {
             new int[]{0xFFFFFFFF, 0xFFD7DEE8, 0xFF39D353, 0xFF58A6FF, 0xFFE3B341, 0xFF768390});
         keyActiveField = addSection(content, "Key pressed color", prefs.getExtraKeyActiveColor(),
             new int[]{0xFFFF7B72, 0xFFE3B341, 0xFF39D353, 0xFF58A6FF, 0xFFB392F0, 0xFFFFFFFF});
+
+        TextView imageLabel = new TextView(this);
+        imageLabel.setText("Background image");
+        imageLabel.setTextColor(COLOR_TEXT);
+        imageLabel.setTextSize(14f);
+        imageLabel.setPadding(0, dp(16), 0, dp(2));
+        content.addView(imageLabel);
+
+        imageStatus = new TextView(this);
+        imageStatus.setTextColor(COLOR_DIM);
+        imageStatus.setTextSize(12f);
+        imageStatus.setText(prefs.hasBackgroundImage() ? "An image is set." : "No image set (using color).");
+        content.addView(imageStatus);
+
+        LinearLayout imageRow = new LinearLayout(this);
+        imageRow.setOrientation(LinearLayout.HORIZONTAL);
+        imageRow.setPadding(0, dp(6), 0, 0);
+
+        Button pickImage = new Button(this);
+        pickImage.setText("Pick image");
+        pickImage.setOnClickListener(v -> pickImage());
+        pickImage.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        Button removeImage = new Button(this);
+        removeImage.setText("Remove image");
+        removeImage.setOnClickListener(v -> {
+            prefs.clearBackgroundImage();
+            imageStatus.setText("No image set (using color).");
+            Toast.makeText(this, "Image removed. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+        });
+        removeImage.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        imageRow.addView(pickImage);
+        imageRow.addView(removeImage);
+        content.addView(imageRow);
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -154,6 +192,36 @@ public class TermnxThemeActivity extends AppCompatActivity {
             return;
         }
         Toast.makeText(this, "Saved. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void pickImage() {
+        android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+        intent.setType("image/*");
+        intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        try {
+            startActivityForResult(intent, REQUEST_IMAGE);
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not open picker: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_IMAGE && resultCode == android.app.Activity.RESULT_OK
+            && data != null && data.getData() != null) {
+            android.net.Uri uri = data.getData();
+            try {
+                getContentResolver().takePersistableUriPermission(uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (Exception ignored) {
+            }
+            prefs.setBackgroundImageUri(uri.toString());
+            if (imageStatus != null) imageStatus.setText("An image is set.");
+            Toast.makeText(this, "Image set. Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private int dp(int value) {

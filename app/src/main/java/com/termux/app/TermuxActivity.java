@@ -338,6 +338,23 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             termnxToolbar.setVisibility(showToolbar ? View.VISIBLE : View.GONE);
         }
 
+        com.termux.app.theme.TermnxThemePrefs bgPrefs = new com.termux.app.theme.TermnxThemePrefs(this);
+        if (bgPrefs.hasBackgroundImage()) {
+            android.graphics.drawable.Drawable bgImage =
+                com.termux.app.theme.TermnxThemePrefs.loadBackground(this, bgPrefs.getBackgroundImageUri());
+            if (bgImage != null) {
+                getWindow().getDecorView().setBackground(bgImage);
+                if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            }
+        } else {
+            int termBg = bgPrefs.getTerminalBackground();
+            if (termBg != com.termux.app.theme.TermnxThemePrefs.UNSET) {
+                if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(termBg);
+                if (termnxToolbar != null) termnxToolbar.setBackgroundColor(termBg);
+            }
+        }
+
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(this, LOG_TAG);

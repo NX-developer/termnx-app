@@ -16,6 +16,7 @@ public class TermnxThemePrefs {
     private static final String KEY_TERM_FG = "terminal_foreground";
     private static final String KEY_KEY_TEXT = "extra_key_text";
     private static final String KEY_KEY_ACTIVE = "extra_key_active";
+    private static final String KEY_BG_IMAGE = "background_image";
 
     public static final int UNSET = 0;
 
@@ -39,6 +40,55 @@ public class TermnxThemePrefs {
 
     public int getExtraKeyActiveColor() {
         return prefs.getInt(KEY_KEY_ACTIVE, UNSET);
+    }
+
+    public String getBackgroundImageUri() {
+        return prefs.getString(KEY_BG_IMAGE, "");
+    }
+
+    public void setBackgroundImageUri(String uri) {
+        prefs.edit().putString(KEY_BG_IMAGE, uri == null ? "" : uri).apply();
+    }
+
+    public void clearBackgroundImage() {
+        prefs.edit().remove(KEY_BG_IMAGE).apply();
+    }
+
+    public boolean hasBackgroundImage() {
+        String uri = getBackgroundImageUri();
+        return uri != null && !uri.isEmpty();
+    }
+
+    public static android.graphics.drawable.Drawable loadBackground(Context context, String uriString) {
+        try {
+            android.net.Uri uri = android.net.Uri.parse(uriString);
+            android.util.DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+            int targetW = metrics.widthPixels;
+            int targetH = metrics.heightPixels;
+
+            android.graphics.BitmapFactory.Options bounds = new android.graphics.BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            try (java.io.InputStream in = context.getContentResolver().openInputStream(uri)) {
+                android.graphics.BitmapFactory.decodeStream(in, null, bounds);
+            }
+            int sample = 1;
+            while (bounds.outWidth / sample > targetW * 2 && bounds.outHeight / sample > targetH * 2) {
+                sample *= 2;
+            }
+            android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+            opts.inSampleSize = sample;
+            android.graphics.Bitmap bitmap;
+            try (java.io.InputStream in = context.getContentResolver().openInputStream(uri)) {
+                bitmap = android.graphics.BitmapFactory.decodeStream(in, null, opts);
+            }
+            if (bitmap == null) return null;
+            android.graphics.drawable.BitmapDrawable drawable =
+                new android.graphics.drawable.BitmapDrawable(context.getResources(), bitmap);
+            drawable.setGravity(android.view.Gravity.FILL);
+            return drawable;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void setTerminalBackground(int color) {
