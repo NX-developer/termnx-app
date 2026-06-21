@@ -331,6 +331,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTermuxTerminalSessionActivityClient.checkForFontAndColors();
         }
 
+        ViewPager termnxToolbar = getTerminalToolbarViewPager();
+        if (termnxToolbar != null) {
+            boolean showToolbar = mPreferences.shouldShowTerminalToolbar()
+                && !com.termux.app.keys.TermnxKeysPrefs.shouldHideBar(this);
+            termnxToolbar.setVisibility(showToolbar ? View.VISIBLE : View.GONE);
+        }
+
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(this, LOG_TAG);
@@ -528,7 +535,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTermuxTerminalViewClient, mTermuxTerminalSessionActivityClient);
 
         final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
-        if (mPreferences.shouldShowTerminalToolbar()) terminalToolbarViewPager.setVisibility(View.VISIBLE);
+        boolean showToolbar = mPreferences.shouldShowTerminalToolbar() && !com.termux.app.keys.TermnxKeysPrefs.shouldHideBar(this);
+        terminalToolbarViewPager.setVisibility(showToolbar ? View.VISIBLE : View.GONE);
 
         ViewGroup.LayoutParams layoutParams = terminalToolbarViewPager.getLayoutParams();
         mTerminalToolbarDefaultHeight = layoutParams.height;

@@ -112,6 +112,9 @@ public class TermnxKeysActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(Menu.NONE, 1, Menu.NONE, "Add");
         menu.add(Menu.NONE, 2, Menu.NONE, "Save");
+        MenuItem hide = menu.add(Menu.NONE, 3, Menu.NONE, "Hide bar");
+        hide.setCheckable(true);
+        hide.setChecked(prefs.isHidden());
         return true;
     }
 
@@ -126,6 +129,14 @@ public class TermnxKeysActivity extends AppCompatActivity {
         } else if (item.getItemId() == 2) {
             prefs.save(working);
             Toast.makeText(this, "Saved.", Toast.LENGTH_SHORT).show();
+            return true;
+        } else if (item.getItemId() == 3) {
+            boolean newValue = !item.isChecked();
+            item.setChecked(newValue);
+            prefs.setHidden(newValue);
+            Toast.makeText(this, newValue
+                ? "Key bar hidden. Your keys are kept."
+                : "Key bar shown.", Toast.LENGTH_SHORT).show();
             return true;
         }
         return super.onOptionsItemSelected(item);

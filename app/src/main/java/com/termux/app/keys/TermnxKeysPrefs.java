@@ -14,6 +14,7 @@ public class TermnxKeysPrefs {
     private static final String PREFS_NAME = "termnx_keys";
     private static final String KEY_CUSTOM = "custom_keys";
     private static final String KEY_CUSTOMIZED = "customized";
+    private static final String KEY_HIDDEN = "hidden";
 
     public static class CustomKey {
         public final String label;
@@ -33,6 +34,20 @@ public class TermnxKeysPrefs {
 
     public boolean isCustomized() {
         return prefs.getBoolean(KEY_CUSTOMIZED, false);
+    }
+
+    public boolean isHidden() {
+        return prefs.getBoolean(KEY_HIDDEN, false);
+    }
+
+    public void setHidden(boolean hidden) {
+        prefs.edit().putBoolean(KEY_HIDDEN, hidden).apply();
+    }
+
+    public static boolean shouldHideBar(Context context) {
+        TermnxKeysPrefs prefs = new TermnxKeysPrefs(context);
+        if (prefs.isHidden()) return true;
+        return prefs.isCustomized() && prefs.getKeys().isEmpty();
     }
 
     public List<CustomKey> getKeys() {
@@ -88,6 +103,7 @@ public class TermnxKeysPrefs {
 
     public static String buildLayout(Context context, String defaultLayout) {
         TermnxKeysPrefs prefs = new TermnxKeysPrefs(context);
+        if (prefs.isHidden()) return "[]";
         if (!prefs.isCustomized()) return defaultLayout;
         List<CustomKey> keys = prefs.getKeys();
 
