@@ -124,6 +124,7 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
         editModeItem = menu.add(Menu.NONE, 3, Menu.NONE, "Edit mode (Ctrl+A)");
         editModeItem.setCheckable(true);
         editModeItem.setChecked(prefs.isEditMode());
+        menu.add(Menu.NONE, 4, Menu.NONE, "Check models");
         return true;
     }
 
@@ -145,6 +146,9 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
             return true;
         } else if (item.getItemId() == 3) {
             toggleEditMode();
+            return true;
+        } else if (item.getItemId() == 4) {
+            checkModels();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -201,9 +205,93 @@ public class TermnxAiActivity extends AppCompatActivity implements AiAgent.Liste
                 prefs.setModel(modelField.getText().toString());
                 prefs.setBaseUrl(baseUrlField.getText().toString());
                 addBubble("Settings saved.", COLOR_OUTPUT, COLOR_DIM, true);
+                checkModels();
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    private void checkModels() {
+        addBubble("Checking available models...", COLOR_OUTPUT, COLOR_DIM, true);
+        new Thread(() -> {
+            CommandRunner.Result probe = CommandRunner.run(this,
+                "command -v python || command -v python3", 20);
+            boolean hasPython = probe.started && probe.exitCode == 0
+                && probe.stdout != null && probe.stdout.trim().length() > 0;
+            if (hasPython) {
+                runModelScript();
+            } else {
+                runOnUiThread(() -> new AlertDialog.Builder(this)
+                    .setTitle("Python required")
+                    .setMessage("Checking which models are free needs Python. Install it now? "
+                        + "(pkg install python)")
+                    .setPositiveButton("Install", (d, w) -> installPythonThenCheck())
+                    .setNegativeButton("Cancel", (d, w) -> addBubble(
+                        "Skipped. You can install Python later with: pkg install python",
+                        COLOR_OUTPUT, COLOR_DIM, true))
+                    .show());
+            }
+        }).start();
+    }
+
+    private void installPythonThenCheck() {
+        addBubble("Installing Python, this can take a minute...", COLOR_OUTPUT, COLOR_DIM, true);
+        new Thread(() -> {
+            CommandRunner.Result res = CommandRunner.run(this, "pkg install -y python", 600);
+            runOnUiThread(() -> addBubble(res.exitCode == 0
+                ? "Python installed."
+                : "Python install finished with code " + res.exitCode + ".",
+                COLOR_OUTPUT, COLOR_DIM, true));
+            runModelScript();
+        }).start();
+    }
+
+    private void runModelScript() {
+        try {
+            StringBuilder s = new StringBuilder();
+            s.append("import json, urllib.request\n");
+            s.append("try:\n");
+            s.append("    req = urllib.request.Request(\"https://openrouter.ai/api/v1/models\", headers={\"User-Agent\": \"Termnx\"})\n");
+            s.append("    data = json.load(urllib.request.urlopen(req, timeout=30))\n");
+            s.append("    models = data.get(\"data\", [])\n");
+            s.append("    free = []\n");
+            s.append("    paid = 0\n");
+            s.append("    for m in models:\n");
+            s.append("        p = m.get(\"pricing\", {})\n");
+            s.append("        pr = str(p.get(\"prompt\", \"0\"))\n");
+            s.append("        co = str(p.get(\"completion\", \"0\"))\n");
+            s.append("        if pr in (\"0\", \"0.0\") and co in (\"0\", \"0.0\"):\n");
+            s.append("            free.append(m.get(\"id\"))\n");
+            s.append("        else:\n");
+            s.append("            paid += 1\n");
+            s.append("    print(\"Total models:\", len(models))\n");
+            s.append("    print(\"Free models:\", len(free))\n");
+            s.append("    print(\"Paid models:\", paid)\n");
+            s.append("    print(\"\")\n");
+            s.append("    print(\"Free models (first 40):\")\n");
+            s.append("    for f in free[:40]:\n");
+            s.append("        print(\" - \" + str(f))\n");
+            s.append("except Exception as e:\n");
+            s.append("    print(\"Check failed: \" + str(e))\n");
+
+            java.io.File file = new java.io.File(
+                com.termux.shared.termux.TermuxConstants.TERMUX_HOME_DIR_PATH, ".termnx_model_check.py");
+            try (java.io.OutputStream out = new java.io.FileOutputStream(file)) {
+                out.write(s.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                out.flush();
+            }
+
+            String path = file.getAbsolutePath();
+            CommandRunner.Result res = CommandRunner.run(this,
+                "python " + path + " || python3 " + path, 90);
+            String output = res.stdout != null ? res.stdout.trim() : "";
+            if (output.isEmpty()) output = "No output (exit " + res.exitCode + ").";
+            final String shown = output;
+            runOnUiThread(() -> addBubble(shown, COLOR_OUTPUT, COLOR_DIM, true));
+        } catch (Exception e) {
+            runOnUiThread(() -> addBubble("Model check failed: " + e.getMessage(),
+                COLOR_OUTPUT, COLOR_DIM, true));
+        }
     }
 
     private TextView labelView(String text) {
