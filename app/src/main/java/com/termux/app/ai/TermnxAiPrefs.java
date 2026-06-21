@@ -12,7 +12,7 @@ public class TermnxAiPrefs {
     private static final String KEY_EDIT_MODE = "edit_mode";
     private static final String KEY_BASE_URL = "base_url";
 
-    public static final String DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
+    public static final String DEFAULT_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
     public static final String DEFAULT_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
 
     private final SharedPreferences prefs;

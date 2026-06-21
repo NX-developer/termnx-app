@@ -91,7 +91,25 @@ public class OpenRouterClient {
         if (message == null) {
             throw new RuntimeException("Malformed response from model");
         }
-        return message.optString("content", "");
+        Object content = message.opt("content");
+        if (content instanceof JSONArray) {
+            JSONArray blocks = (JSONArray) content;
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < blocks.length(); i++) {
+                JSONObject block = blocks.optJSONObject(i);
+                if (block == null) continue;
+                String text = block.optString("text", "");
+                if (!text.isEmpty()) {
+                    if (builder.length() > 0) builder.append("\n");
+                    builder.append(text);
+                }
+            }
+            return builder.toString();
+        }
+        if (content == null || content == JSONObject.NULL) {
+            return "";
+        }
+        return content.toString();
     }
 
     private String extractError(String response) {

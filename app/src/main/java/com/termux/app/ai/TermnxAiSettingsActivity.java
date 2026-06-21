@@ -320,6 +320,15 @@ public class TermnxAiSettingsActivity extends AppCompatActivity {
             filtered.add(entry);
         }
 
+        String pinned = TermnxAiPrefs.DEFAULT_MODEL;
+        for (int i = 0; i < filtered.size(); i++) {
+            if (filtered.get(i)[0].equals(pinned)) {
+                String[] entry = filtered.remove(i);
+                filtered.add(0, entry);
+                break;
+            }
+        }
+
         int shown = Math.min(count, filtered.size());
         listStatus.setText("Showing " + shown + " of " + filtered.size() + " matched ("
             + allModels.size() + " total, " + freeTotal + " free). Tap one to select it.");
