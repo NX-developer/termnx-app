@@ -18,6 +18,8 @@ public class TermnxThemePrefs {
     private static final String KEY_KEY_ACTIVE = "extra_key_active";
     private static final String KEY_BG_IMAGE = "background_image";
     private static final String KEY_BG_VIDEO = "background_video";
+    private static final String KEY_BG_RAINBOW = "background_rainbow";
+    private static final String KEY_VIDEO_MUTED = "video_muted";
 
     public static final int UNSET = 0;
 
@@ -48,7 +50,8 @@ public class TermnxThemePrefs {
     }
 
     public void setBackgroundImageUri(String uri) {
-        prefs.edit().putString(KEY_BG_IMAGE, uri == null ? "" : uri).remove(KEY_BG_VIDEO).apply();
+        prefs.edit().putString(KEY_BG_IMAGE, uri == null ? "" : uri)
+            .remove(KEY_BG_VIDEO).putBoolean(KEY_BG_RAINBOW, false).apply();
     }
 
     public void clearBackgroundImage() {
@@ -65,7 +68,8 @@ public class TermnxThemePrefs {
     }
 
     public void setBackgroundVideoUri(String uri) {
-        prefs.edit().putString(KEY_BG_VIDEO, uri == null ? "" : uri).remove(KEY_BG_IMAGE).apply();
+        prefs.edit().putString(KEY_BG_VIDEO, uri == null ? "" : uri)
+            .remove(KEY_BG_IMAGE).putBoolean(KEY_BG_RAINBOW, false).apply();
     }
 
     public boolean hasBackgroundVideo() {
@@ -73,8 +77,30 @@ public class TermnxThemePrefs {
         return uri != null && !uri.isEmpty();
     }
 
+    public boolean isRainbow() {
+        return prefs.getBoolean(KEY_BG_RAINBOW, false);
+    }
+
+    public void setRainbow(boolean enabled) {
+        if (enabled) {
+            prefs.edit().putBoolean(KEY_BG_RAINBOW, true)
+                .remove(KEY_BG_IMAGE).remove(KEY_BG_VIDEO).apply();
+        } else {
+            prefs.edit().putBoolean(KEY_BG_RAINBOW, false).apply();
+        }
+    }
+
+    public boolean isVideoMuted() {
+        return prefs.getBoolean(KEY_VIDEO_MUTED, true);
+    }
+
+    public void setVideoMuted(boolean muted) {
+        prefs.edit().putBoolean(KEY_VIDEO_MUTED, muted).apply();
+    }
+
     public void clearBackground() {
-        prefs.edit().remove(KEY_BG_IMAGE).remove(KEY_BG_VIDEO).apply();
+        prefs.edit().remove(KEY_BG_IMAGE).remove(KEY_BG_VIDEO)
+            .putBoolean(KEY_BG_RAINBOW, false).apply();
     }
 
     public static android.graphics.drawable.Drawable loadBackground(Context context, String uriString) {

@@ -109,6 +109,28 @@ public class TermnxThemeActivity extends AppCompatActivity {
         imageRow.addView(removeImage);
         content.addView(imageRow);
 
+        android.widget.CheckBox rainbowCheck = new android.widget.CheckBox(this);
+        rainbowCheck.setText("Rainbow background (animated)");
+        rainbowCheck.setTextColor(COLOR_TEXT);
+        rainbowCheck.setChecked(prefs.isRainbow());
+        rainbowCheck.setPadding(0, dp(10), 0, 0);
+        rainbowCheck.setOnCheckedChangeListener((button, checked) -> {
+            prefs.setRainbow(checked);
+            imageStatus.setText(currentBackgroundStatus());
+            Toast.makeText(this, "Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+        });
+        content.addView(rainbowCheck);
+
+        android.widget.CheckBox soundCheck = new android.widget.CheckBox(this);
+        soundCheck.setText("Play video sound");
+        soundCheck.setTextColor(COLOR_TEXT);
+        soundCheck.setChecked(!prefs.isVideoMuted());
+        soundCheck.setOnCheckedChangeListener((button, checked) -> {
+            prefs.setVideoMuted(!checked);
+            Toast.makeText(this, "Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+        });
+        content.addView(soundCheck);
+
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
         actions.setPadding(dp(12), dp(4), dp(12), dp(12));
@@ -202,6 +224,7 @@ public class TermnxThemeActivity extends AppCompatActivity {
     }
 
     private String currentBackgroundStatus() {
+        if (prefs.isRainbow()) return "Rainbow background is on.";
         if (prefs.hasBackgroundVideo()) return "A video is set.";
         if (prefs.hasBackgroundImage()) return "An image is set.";
         return "No background set (using color).";
