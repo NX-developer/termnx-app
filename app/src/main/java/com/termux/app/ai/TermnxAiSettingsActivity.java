@@ -42,8 +42,15 @@ public class TermnxAiSettingsActivity extends AppCompatActivity {
     private EditText modelField;
     private EditText countField;
     private EditText urlField;
+    private EditText searchField;
     private LinearLayout modelList;
     private TextView listStatus;
+
+    private final List<String[]> allModels = new ArrayList<>();
+    private int filterMode = 0;
+    private Button filterAll;
+    private Button filterFree;
+    private Button filterPaid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +93,35 @@ public class TermnxAiSettingsActivity extends AppCompatActivity {
         listStatus.setPadding(0, dp(8), 0, 0);
         listStatus.setText("Enter your key, set a count, then load the model list.");
         header.addView(listStatus);
+
+        searchField = field("Search model name", "");
+        searchField.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                renderFiltered();
+            }
+        });
+        header.addView(searchField);
+
+        LinearLayout filterRow = new LinearLayout(this);
+        filterRow.setOrientation(LinearLayout.HORIZONTAL);
+        filterRow.setPadding(0, dp(8), 0, 0);
+        filterAll = filterButton("All", 0);
+        filterFree = filterButton("Free", 1);
+        filterPaid = filterButton("Paid", 2);
+        filterRow.addView(filterAll);
+        filterRow.addView(filterFree);
+        filterRow.addView(filterPaid);
+        header.addView(filterRow);
+        updateFilterButtons();
 
         ScrollView scroll = new ScrollView(this);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(
@@ -170,7 +206,6 @@ public class TermnxAiSettingsActivity extends AppCompatActivity {
     }
 
     private void loadModels() {
-        final int count = parseCount();
         final String endpoint = modelsEndpoint();
         final String key = keyField.getText().toString().trim();
         listStatus.setText("Loading models...");
@@ -178,11 +213,39 @@ public class TermnxAiSettingsActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 List<String[]> models = fetchModels(endpoint, key);
-                runOnUiThread(() -> showModels(models, count));
+                runOnUiThread(() -> {
+                    allModels.clear();
+                    allModels.addAll(models);
+                    renderFiltered();
+                });
             } catch (Exception e) {
                 runOnUiThread(() -> listStatus.setText("Could not load models: " + e.getMessage()));
             }
         }).start();
+    }
+
+    private Button filterButton(String label, int mode) {
+        Button button = new Button(this);
+        button.setText(label);
+        button.setOnClickListener(v -> {
+            filterMode = mode;
+            updateFilterButtons();
+            renderFiltered();
+        });
+        button.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        return button;
+    }
+
+    private void updateFilterButtons() {
+        styleFilterButton(filterAll, filterMode == 0);
+        styleFilterButton(filterFree, filterMode == 1);
+        styleFilterButton(filterPaid, filterMode == 2);
+    }
+
+    private void styleFilterButton(Button button, boolean active) {
+        if (button == null) return;
+        button.setBackgroundColor(active ? 0xFF1F6FEB : COLOR_CARD);
+        button.setTextColor(active ? 0xFFFFFFFF : COLOR_DIM);
     }
 
     private List<String[]> fetchModels(String endpoint, String key) throws Exception {
@@ -234,22 +297,35 @@ public class TermnxAiSettingsActivity extends AppCompatActivity {
         return trimmed.equals("0") || trimmed.equals("0.0") || trimmed.equals("0.00") || trimmed.isEmpty();
     }
 
-    private void showModels(List<String[]> models, int count) {
+    private void renderFiltered() {
         modelList.removeAllViews();
-        if (models.isEmpty()) {
-            listStatus.setText("No models returned.");
+        if (allModels.isEmpty()) {
+            listStatus.setText("Load the model list first.");
             return;
         }
-        int shown = Math.min(count, models.size());
-        int freeCount = 0;
-        for (String[] entry : models) {
-            if ("free".equals(entry[1])) freeCount++;
+        int count = parseCount();
+        String query = searchField.getText().toString().trim().toLowerCase();
+
+        int freeTotal = 0;
+        for (String[] entry : allModels) {
+            if ("free".equals(entry[1])) freeTotal++;
         }
-        listStatus.setText("Showing " + shown + " of " + models.size() + " models ("
-            + freeCount + " free in total). Tap one to select it.");
+
+        List<String[]> filtered = new ArrayList<>();
+        for (String[] entry : allModels) {
+            boolean free = "free".equals(entry[1]);
+            if (filterMode == 1 && !free) continue;
+            if (filterMode == 2 && free) continue;
+            if (!query.isEmpty() && !entry[0].toLowerCase().contains(query)) continue;
+            filtered.add(entry);
+        }
+
+        int shown = Math.min(count, filtered.size());
+        listStatus.setText("Showing " + shown + " of " + filtered.size() + " matched ("
+            + allModels.size() + " total, " + freeTotal + " free). Tap one to select it.");
 
         for (int i = 0; i < shown; i++) {
-            final String[] entry = models.get(i);
+            final String[] entry = filtered.get(i);
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setBackgroundColor(COLOR_CARD);
