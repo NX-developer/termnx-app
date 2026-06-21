@@ -44,10 +44,10 @@ public class CommandPolicy {
 
     public static String label(ActionType type) {
         switch (type) {
-            case DELETE: return "Dosya silme";
-            case EDIT: return "Dosya düzenleme";
-            case PACKAGE: return "Paket işlemi";
-            default: return "Komut";
+            case DELETE: return "Delete file";
+            case EDIT: return "Edit file";
+            case PACKAGE: return "Package operation";
+            default: return "Command";
         }
     }
 
