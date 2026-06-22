@@ -178,7 +178,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private android.view.TextureView mTermnxVideoView;
     private android.media.MediaPlayer mTermnxVideoPlayer;
     private String mTermnxVideoUri;
-    private android.animation.ValueAnimator mTermnxRainbowAnimator;
+    private android.animation.ValueAnimator mTermnxBgRainbowAnimator;
+    private android.animation.ValueAnimator mTermnxTextRainbowAnimator;
 
 
     private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
@@ -346,16 +347,16 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         com.termux.app.theme.TermnxThemePrefs bgPrefs = new com.termux.app.theme.TermnxThemePrefs(this);
         if (bgPrefs.isRainbow()) {
             releaseTermnxVideoBackground();
-            startTermnxRainbow();
+            startTermnxBgRainbow();
             if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
             if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         } else if (bgPrefs.hasBackgroundVideo()) {
-            stopTermnxRainbow();
+            stopTermnxBgRainbow();
             startTermnxVideoBackground(bgPrefs.getBackgroundVideoUri());
             if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
             if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         } else if (bgPrefs.hasBackgroundImage()) {
-            stopTermnxRainbow();
+            stopTermnxBgRainbow();
             releaseTermnxVideoBackground();
             android.graphics.drawable.Drawable bgImage =
                 com.termux.app.theme.TermnxThemePrefs.loadBackground(this, bgPrefs.getBackgroundImageUri());
@@ -365,13 +366,19 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
             }
         } else {
-            stopTermnxRainbow();
+            stopTermnxBgRainbow();
             releaseTermnxVideoBackground();
             int termBg = bgPrefs.getTerminalBackground();
             if (termBg != com.termux.app.theme.TermnxThemePrefs.UNSET) {
                 if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(termBg);
                 if (termnxToolbar != null) termnxToolbar.setBackgroundColor(termBg);
             }
+        }
+
+        if (bgPrefs.isRainbowText()) {
+            startTermnxTextRainbow();
+        } else {
+            stopTermnxTextRainbow();
         }
 
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
@@ -397,7 +404,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             } catch (Exception ignored) {
             }
         }
-        stopTermnxRainbow();
+        stopTermnxBgRainbow();
+        stopTermnxTextRainbow();
 
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onStop();
@@ -418,7 +426,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Logger.logDebug(LOG_TAG, "onDestroy");
 
         releaseTermnxVideoPlayer();
-        stopTermnxRainbow();
+        stopTermnxBgRainbow();
+        stopTermnxTextRainbow();
 
         if (mIsInvalidState) return;
 
@@ -992,27 +1001,53 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
     }
 
-    private void startTermnxRainbow() {
-        if (mTermnxRainbowAnimator != null && mTermnxRainbowAnimator.isRunning()) {
+    private void startTermnxBgRainbow() {
+        if (mTermnxBgRainbowAnimator != null && mTermnxBgRainbowAnimator.isRunning()) {
             return;
         }
-        mTermnxRainbowAnimator = android.animation.ValueAnimator.ofFloat(0f, 360f);
-        mTermnxRainbowAnimator.setDuration(8000);
-        mTermnxRainbowAnimator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-        mTermnxRainbowAnimator.setRepeatMode(android.animation.ValueAnimator.RESTART);
-        mTermnxRainbowAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
-        mTermnxRainbowAnimator.addUpdateListener(animation -> {
+        mTermnxBgRainbowAnimator = android.animation.ValueAnimator.ofFloat(0f, 360f);
+        mTermnxBgRainbowAnimator.setDuration(8000);
+        mTermnxBgRainbowAnimator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        mTermnxBgRainbowAnimator.setRepeatMode(android.animation.ValueAnimator.RESTART);
+        mTermnxBgRainbowAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
+        mTermnxBgRainbowAnimator.addUpdateListener(animation -> {
             float hue = (float) animation.getAnimatedValue();
             int color = android.graphics.Color.HSVToColor(new float[]{hue, 0.7f, 0.5f});
             getWindow().getDecorView().setBackgroundColor(color);
         });
-        mTermnxRainbowAnimator.start();
+        mTermnxBgRainbowAnimator.start();
     }
 
-    private void stopTermnxRainbow() {
-        if (mTermnxRainbowAnimator != null) {
-            mTermnxRainbowAnimator.cancel();
-            mTermnxRainbowAnimator = null;
+    private void stopTermnxBgRainbow() {
+        if (mTermnxBgRainbowAnimator != null) {
+            mTermnxBgRainbowAnimator.cancel();
+            mTermnxBgRainbowAnimator = null;
+        }
+    }
+
+    private void startTermnxTextRainbow() {
+        if (mTermnxTextRainbowAnimator != null && mTermnxTextRainbowAnimator.isRunning()) {
+            return;
+        }
+        mTermnxTextRainbowAnimator = android.animation.ValueAnimator.ofFloat(0f, 360f);
+        mTermnxTextRainbowAnimator.setDuration(6000);
+        mTermnxTextRainbowAnimator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        mTermnxTextRainbowAnimator.setRepeatMode(android.animation.ValueAnimator.RESTART);
+        mTermnxTextRainbowAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
+        mTermnxTextRainbowAnimator.addUpdateListener(animation -> {
+            if (mTerminalView == null || mTerminalView.mEmulator == null) return;
+            float hue = (float) animation.getAnimatedValue();
+            int color = android.graphics.Color.HSVToColor(new float[]{hue, 1f, 1f});
+            mTerminalView.mEmulator.mColors.mCurrentColors[com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND] = color;
+            mTerminalView.invalidate();
+        });
+        mTermnxTextRainbowAnimator.start();
+    }
+
+    private void stopTermnxTextRainbow() {
+        if (mTermnxTextRainbowAnimator != null) {
+            mTermnxTextRainbowAnimator.cancel();
+            mTermnxTextRainbowAnimator = null;
         }
     }
 

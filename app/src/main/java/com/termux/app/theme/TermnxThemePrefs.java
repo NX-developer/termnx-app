@@ -81,6 +81,14 @@ public class TermnxThemePrefs {
         return prefs.getBoolean(KEY_BG_RAINBOW, false);
     }
 
+    public boolean isRainbowText() {
+        return prefs.getBoolean("rainbow_text", false);
+    }
+
+    public void setRainbowText(boolean enabled) {
+        prefs.edit().putBoolean("rainbow_text", enabled).apply();
+    }
+
     public void setRainbow(boolean enabled) {
         if (enabled) {
             prefs.edit().putBoolean(KEY_BG_RAINBOW, true)

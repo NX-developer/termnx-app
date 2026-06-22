@@ -121,6 +121,16 @@ public class TermnxThemeActivity extends AppCompatActivity {
         });
         content.addView(rainbowCheck);
 
+        android.widget.CheckBox rainbowTextCheck = new android.widget.CheckBox(this);
+        rainbowTextCheck.setText("Rainbow text (animated)");
+        rainbowTextCheck.setTextColor(COLOR_TEXT);
+        rainbowTextCheck.setChecked(prefs.isRainbowText());
+        rainbowTextCheck.setOnCheckedChangeListener((button, checked) -> {
+            prefs.setRainbowText(checked);
+            Toast.makeText(this, "Return to the terminal to apply.", Toast.LENGTH_SHORT).show();
+        });
+        content.addView(rainbowTextCheck);
+
         android.widget.CheckBox soundCheck = new android.widget.CheckBox(this);
         soundCheck.setText("Play video sound");
         soundCheck.setTextColor(COLOR_TEXT);

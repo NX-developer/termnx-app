@@ -66,6 +66,7 @@ public class AiAgent {
             + "and put nothing else on that line. Output at most one RUN command per reply. "
             + "After the command runs you will receive a user message with its output and exit code, then you continue. "
             + "Make installs non-interactive (use 'pkg install -y' or 'apt -y'). Avoid destructive commands unless explicitly asked. "
+            + "Always write commands with correct spacing between the program and its subcommand (for example 'pkg install', never 'pkginstall'). "
             + "When the task is finished, reply with a normal message (no RUN line) that explains the result. "
             + "Always reply to the user in the same language they write in. Keep answers concise.\n\n"
             + "You can install developer CLI agents on request. Before installing an npm tool, ensure prerequisites first: "
@@ -180,11 +181,25 @@ public class AiAgent {
             if (trimmed.startsWith("RUN:")) {
                 String command = trimmed.substring(4).trim();
                 if (!command.isEmpty()) {
-                    return command;
+                    return normalizeCommand(command);
                 }
             }
         }
         return null;
+    }
+
+    private String normalizeCommand(String command) {
+        if (command == null) return null;
+        String result = command;
+        result = result.replaceAll("(?i)\\bpkginstall\\b", "pkg install");
+        result = result.replaceAll("(?i)\\baptinstall\\b", "apt install");
+        result = result.replaceAll("(?i)\\bapt-getinstall\\b", "apt-get install");
+        result = result.replaceAll("(?i)\\bpipinstall\\b", "pip install");
+        result = result.replaceAll("(?i)\\bpip3install\\b", "pip3 install");
+        result = result.replaceAll("(?i)\\bnpminstall\\b", "npm install");
+        result = result.replaceAll("(?i)\\bpkgupgrade\\b", "pkg upgrade");
+        result = result.replaceAll("(?i)\\bpkgupdate\\b", "pkg update");
+        return result;
     }
 
     private String stripRunLines(String assistant) {
