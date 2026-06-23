@@ -169,6 +169,7 @@ public class TermnxKeysActivity extends AppCompatActivity {
 
             TextView text = new TextView(this);
             String shown = key.label.equals(key.value) ? key.value : key.label + "  \u2192  " + key.value;
+            if (key.macro) shown = shown + "   (combo)";
             text.setText(shown);
             text.setTextColor(COLOR_TEXT);
             text.setTypeface(Typeface.MONOSPACE);
@@ -227,32 +228,62 @@ public class TermnxKeysActivity extends AppCompatActivity {
         labelField.setInputType(InputType.TYPE_CLASS_TEXT);
 
         final EditText valueField = new EditText(this);
-        valueField.setHint("Value (e.g. ENTER, /, ls -la)");
+        valueField.setHint("Value (e.g. ls -la, SHIFT+TAB)");
         valueField.setInputType(InputType.TYPE_CLASS_TEXT);
 
+        final android.widget.CheckBox macroCheck = new android.widget.CheckBox(this);
+        macroCheck.setText("Run as key/combo (e.g. SHIFT+TAB, CTRL+C)");
+        macroCheck.setTextColor(COLOR_TEXT);
+        macroCheck.setPadding(0, dp(8), 0, 0);
+
         TextView hint = new TextView(this);
-        hint.setText("Special keys: ENTER, TAB, ESC, CTRL, ALT, UP, DOWN, LEFT, RIGHT, HOME, END, PGUP, PGDN");
+        hint.setText("Off: types the text. On: sends it as a key or key combination. "
+            + "Special keys: ENTER, TAB, ESC, CTRL, ALT, UP, DOWN, LEFT, RIGHT, HOME, END, PGUP, PGDN.");
         hint.setTextColor(COLOR_DIM);
         hint.setTextSize(11f);
         hint.setPadding(0, dp(8), 0, 0);
 
         layout.addView(labelField);
         layout.addView(valueField);
+        layout.addView(macroCheck);
         layout.addView(hint);
 
         new AlertDialog.Builder(this)
             .setTitle("Add key")
             .setView(layout)
             .setPositiveButton("Add", (dialog, which) -> {
-                String value = valueField.getText().toString().trim();
+                String rawValue = valueField.getText().toString().trim();
                 String label = labelField.getText().toString().trim();
+                boolean macro = macroCheck.isChecked();
+                String value = macro ? normalizeMacro(rawValue) : rawValue;
                 if (!value.isEmpty()) {
-                    working.add(new TermnxKeysPrefs.CustomKey(label.isEmpty() ? value : label, value));
+                    working.add(new TermnxKeysPrefs.CustomKey(label.isEmpty() ? value : label, value, macro));
                     renderList();
                 }
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    private String normalizeMacro(String value) {
+        String replaced = value.replace("+", " ").replace(",", " ");
+        String[] parts = replaced.trim().split("\\s+");
+        java.util.Set<String> special = new java.util.HashSet<>(java.util.Arrays.asList(
+            "SHIFT", "CTRL", "ALT", "FN", "ESC", "TAB", "ENTER", "UP", "DOWN", "LEFT", "RIGHT",
+            "HOME", "END", "PGUP", "PGDN", "DEL", "BKSP", "SPACE", "INS", "MENU"));
+        StringBuilder builder = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            String token = part;
+            if (special.contains(part.toUpperCase())) {
+                token = part.toUpperCase();
+            } else if (part.matches("(?i)f[0-9]{1,2}")) {
+                token = part.toUpperCase();
+            }
+            if (builder.length() > 0) builder.append(" ");
+            builder.append(token);
+        }
+        return builder.toString();
     }
 
     private int dp(int value) {

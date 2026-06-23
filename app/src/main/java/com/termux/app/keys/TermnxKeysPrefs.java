@@ -19,10 +19,16 @@ public class TermnxKeysPrefs {
     public static class CustomKey {
         public final String label;
         public final String value;
+        public final boolean macro;
 
         public CustomKey(String label, String value) {
+            this(label, value, false);
+        }
+
+        public CustomKey(String label, String value, boolean macro) {
             this.label = label;
             this.value = value;
+            this.macro = macro;
         }
     }
 
@@ -60,8 +66,9 @@ public class TermnxKeysPrefs {
                 JSONObject obj = array.getJSONObject(i);
                 String label = obj.optString("label", "");
                 String value = obj.optString("value", "");
+                boolean macro = obj.optBoolean("macro", false);
                 if (!value.isEmpty()) {
-                    keys.add(new CustomKey(label.isEmpty() ? value : label, value));
+                    keys.add(new CustomKey(label.isEmpty() ? value : label, value, macro));
                 }
             }
         } catch (Exception ignored) {
@@ -76,6 +83,7 @@ public class TermnxKeysPrefs {
                 JSONObject obj = new JSONObject();
                 obj.put("label", key.label);
                 obj.put("value", key.value);
+                obj.put("macro", key.macro);
                 array.put(obj);
             } catch (Exception ignored) {
             }
@@ -125,7 +133,13 @@ public class TermnxKeysPrefs {
                 firstInRow = true;
             }
             if (!firstInRow) layout.append(", ");
-            if (label.isEmpty() || label.equals(value)) {
+            if (key.macro) {
+                if (label.isEmpty() || label.equals(value)) {
+                    layout.append("{macro: '").append(value).append("'}");
+                } else {
+                    layout.append("{macro: '").append(value).append("', display: '").append(label).append("'}");
+                }
+            } else if (label.isEmpty() || label.equals(value)) {
                 layout.append("'").append(value).append("'");
             } else {
                 layout.append("{key: '").append(value).append("', display: '").append(label).append("'}");
