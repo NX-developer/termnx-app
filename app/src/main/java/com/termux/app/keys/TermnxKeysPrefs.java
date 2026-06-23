@@ -97,7 +97,7 @@ public class TermnxKeysPrefs {
 
     public static List<CustomKey> defaultSeed() {
         String[] values = {"ESC", "/", "-", "HOME", "UP", "END", "PGUP",
-            "TAB", "CTRL", "ALT", "LEFT", "DOWN", "RIGHT", "PGDN", "ENTER"};
+            "TAB", "CTRL", "ALT", "LEFT", "DOWN", "RIGHT", "PGDN"};
         List<CustomKey> list = new ArrayList<>();
         for (String value : values) {
             list.add(new CustomKey(value, value));

@@ -368,11 +368,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         } else {
             stopTermnxBgRainbow();
             releaseTermnxVideoBackground();
-            int termBg = bgPrefs.getTerminalBackground();
-            if (termBg != com.termux.app.theme.TermnxThemePrefs.UNSET) {
-                if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(termBg);
-                if (termnxToolbar != null) termnxToolbar.setBackgroundColor(termBg);
-            }
+            if (mExtraKeysView != null) mExtraKeysView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            if (termnxToolbar != null) termnxToolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         }
 
         if (bgPrefs.isRainbowText()) {

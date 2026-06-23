@@ -170,10 +170,10 @@ public class TermnxThemePrefs {
     public void writeTerminalColorsFile() throws Exception {
         int bg = getTerminalBackground();
         int fg = getTerminalForeground();
-        if (bg == UNSET && fg == UNSET) {
+        File file = new File(TermuxConstants.TERMUX_COLOR_PROPERTIES_FILE_PATH);
+        if (bg == UNSET && fg == UNSET && !file.exists()) {
             return;
         }
-        File file = new File(TermuxConstants.TERMUX_COLOR_PROPERTIES_FILE_PATH);
         File parent = file.getParentFile();
         if (parent != null && !parent.exists()) {
             parent.mkdirs();
