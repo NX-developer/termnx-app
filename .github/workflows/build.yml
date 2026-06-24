@@ -65,14 +65,14 @@ jobs:
 
       - name: Upload error log
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: error
           path: error.txt
 
       - name: Upload debug APK
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Termnx-debug
           path: app/build/outputs/apk/debug/*.apk
