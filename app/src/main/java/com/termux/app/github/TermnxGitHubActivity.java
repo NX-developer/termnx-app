@@ -63,9 +63,11 @@ public class TermnxGitHubActivity extends AppCompatActivity {
         scroll.addView(content);
 
         TextView info = new TextView(this);
-        info.setText("Connect your GitHub account with a Personal Access Token. This sets up git "
-            + "credentials and a GITHUB_TOKEN environment variable so git and tools like Claude Code, "
-            + "opencode and codex can use your account. Create a token at github.com/settings/tokens.");
+        info.setText("Connect your GitHub account with a Personal Access Token. The token is stored only "
+            + "in a private file (owner-only, chmod 600); git and your shell read it at runtime, so the raw "
+            + "token is never written into .bashrc or .git-credentials. This lets git and tools like Claude "
+            + "Code, opencode and codex use your account without exposing the token. If a token was already "
+            + "flagged as exposed, create a new one at github.com/settings/tokens and connect with that.");
         info.setTextColor(COLOR_DIM);
         info.setTextSize(12f);
         info.setPadding(0, 0, 0, dp(8));
@@ -142,23 +144,50 @@ public class TermnxGitHubActivity extends AppCompatActivity {
         try {
             File home = new File(TermuxConstants.TERMUX_HOME_DIR_PATH);
             if (!home.exists()) home.mkdirs();
+            File dir = new File(home, ".termnx");
+            if (!dir.exists()) dir.mkdirs();
+            chmod(dir, 0700);
+
+            File tokenFile = new File(dir, ".github_token");
+            writeFile(tokenFile, token + "\n");
+            chmod(tokenFile, 0600);
+
+            String shPath = TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/sh";
+            File helper = new File(dir, "git-credential-termnx");
+            StringBuilder script = new StringBuilder();
+            script.append("#!").append(shPath).append("\n");
+            script.append("if [ \"$1\" = \"get\" ]; then\n");
+            script.append("  echo username=").append(user).append("\n");
+            script.append("  echo password=$(cat \"").append(tokenFile.getAbsolutePath()).append("\" 2>/dev/null)\n");
+            script.append("fi\n");
+            writeFile(helper, script.toString());
+            chmod(helper, 0700);
 
             File credentials = new File(home, ".git-credentials");
-            String credLine = "https://" + user + ":" + token + "@github.com";
-            writeFile(credentials, filterOutGithub(readFileSafe(credentials)) + credLine + "\n");
+            if (credentials.exists()) {
+                String filtered = filterOutGithub(readFileSafe(credentials));
+                if (filtered.trim().isEmpty()) {
+                    credentials.delete();
+                } else {
+                    writeFile(credentials, filtered);
+                }
+            }
 
-            String name = email.isEmpty() ? user : user;
             StringBuilder gitConfig = new StringBuilder();
-            gitConfig.append("[credential]\n\thelper = store\n");
-            gitConfig.append("[user]\n\tname = ").append(name).append("\n");
+            gitConfig.append("[credential \"https://github.com\"]\n\thelper = ")
+                .append(helper.getAbsolutePath()).append("\n");
+            gitConfig.append("[user]\n\tname = ").append(user).append("\n");
             if (!email.isEmpty()) {
                 gitConfig.append("\temail = ").append(email).append("\n");
             }
             writeManagedBlock(new File(home, ".gitconfig"), gitConfig.toString());
 
+            String tokenPath = tokenFile.getAbsolutePath();
             StringBuilder bashrc = new StringBuilder();
-            bashrc.append("export GITHUB_TOKEN=\"").append(token).append("\"\n");
-            bashrc.append("export GH_TOKEN=\"").append(token).append("\"\n");
+            bashrc.append("if [ -f \"").append(tokenPath).append("\" ]; then\n");
+            bashrc.append("  export GITHUB_TOKEN=\"$(cat \"").append(tokenPath).append("\")\"\n");
+            bashrc.append("  export GH_TOKEN=\"$GITHUB_TOKEN\"\n");
+            bashrc.append("fi\n");
             writeManagedBlock(new File(home, ".bashrc"), bashrc.toString());
 
             prefs.edit()
@@ -169,16 +198,27 @@ public class TermnxGitHubActivity extends AppCompatActivity {
 
             tokenField.setText("");
             refreshStatus();
-            Toast.makeText(this, "Connected. Open a new session or run: source ~/.bashrc",
+            Toast.makeText(this, "Connected. Token stored privately. Open a new session or run: source ~/.bashrc",
                 Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
+    private void chmod(File file, int mode) {
+        try {
+            android.system.Os.chmod(file.getAbsolutePath(), mode);
+        } catch (Exception ignored) {
+        }
+    }
+
     private void disconnect() {
         try {
             File home = new File(TermuxConstants.TERMUX_HOME_DIR_PATH);
+            File dir = new File(home, ".termnx");
+            new File(dir, ".github_token").delete();
+            new File(dir, "git-credential-termnx").delete();
+
             File credentials = new File(home, ".git-credentials");
             if (credentials.exists()) {
                 String filtered = filterOutGithub(readFileSafe(credentials));
