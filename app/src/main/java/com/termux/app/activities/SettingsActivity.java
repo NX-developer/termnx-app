@@ -110,6 +110,14 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxGitHubPreference = findPreference("termnx_github");
+            if (termnxGitHubPreference != null) {
+                termnxGitHubPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.github.TermnxGitHubActivity.class));
+                    return true;
+                });
+            }
+
             Preference termnxAppLockPreference = findPreference("termnx_applock");
             if (termnxAppLockPreference != null) {
                 termnxAppLockPreference.setSummary(featurePrefs.isAppLockEnabled()

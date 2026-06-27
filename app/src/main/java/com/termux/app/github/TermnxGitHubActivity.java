@@ -1,0 +1,294 @@
+package com.termux.app.github;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.text.InputType;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.termux.shared.termux.TermuxConstants;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
+public class TermnxGitHubActivity extends AppCompatActivity {
+
+    private static final int COLOR_BG = 0xFF0B0E14;
+    private static final int COLOR_TEXT = 0xFFD7DEE8;
+    private static final int COLOR_DIM = 0xFF768390;
+
+    private static final String PREFS_NAME = "termnx_github";
+    private static final String BEGIN = "# >>> termnx-github";
+    private static final String END = "# <<< termnx-github";
+
+    private SharedPreferences prefs;
+    private EditText userField;
+    private EditText emailField;
+    private EditText tokenField;
+    private TextView statusView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        prefs = getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        setTitle("GitHub");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(COLOR_BG);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setLayoutParams(new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16), dp(12), dp(16), dp(12));
+        scroll.addView(content);
+
+        TextView info = new TextView(this);
+        info.setText("Connect your GitHub account with a Personal Access Token. This sets up git "
+            + "credentials and a GITHUB_TOKEN environment variable so git and tools like Claude Code, "
+            + "opencode and codex can use your account. Create a token at github.com/settings/tokens.");
+        info.setTextColor(COLOR_DIM);
+        info.setTextSize(12f);
+        info.setPadding(0, 0, 0, dp(8));
+        content.addView(info);
+
+        statusView = new TextView(this);
+        statusView.setTextColor(COLOR_TEXT);
+        statusView.setTextSize(14f);
+        statusView.setPadding(0, dp(4), 0, dp(8));
+        content.addView(statusView);
+
+        content.addView(label("GitHub username"));
+        userField = field("e.g. NX-developer", prefs.getString("user", ""));
+        content.addView(userField);
+
+        content.addView(label("Email (optional)"));
+        emailField = field("name@example.com", prefs.getString("email", ""));
+        content.addView(emailField);
+
+        content.addView(label("Personal Access Token"));
+        tokenField = field("ghp_...", "");
+        tokenField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        content.addView(tokenField);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setPadding(0, dp(10), 0, 0);
+
+        Button connect = new Button(this);
+        connect.setText("Connect");
+        connect.setOnClickListener(v -> connect());
+        connect.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        Button disconnect = new Button(this);
+        disconnect.setText("Disconnect");
+        disconnect.setOnClickListener(v -> disconnect());
+        disconnect.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        actions.addView(connect);
+        actions.addView(disconnect);
+        content.addView(actions);
+
+        root.addView(scroll);
+        setContentView(root);
+        refreshStatus();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void refreshStatus() {
+        boolean connected = prefs.getBoolean("connected", false);
+        if (connected) {
+            statusView.setText("Connected as " + prefs.getString("user", "") + ".");
+        } else {
+            statusView.setText("Not connected.");
+        }
+    }
+
+    private void connect() {
+        String user = userField.getText().toString().trim();
+        String email = emailField.getText().toString().trim();
+        String token = tokenField.getText().toString().trim();
+        if (user.isEmpty() || token.isEmpty()) {
+            Toast.makeText(this, "Username and token are required.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            File home = new File(TermuxConstants.TERMUX_HOME_DIR_PATH);
+            if (!home.exists()) home.mkdirs();
+
+            File credentials = new File(home, ".git-credentials");
+            String credLine = "https://" + user + ":" + token + "@github.com";
+            writeFile(credentials, filterOutGithub(readFileSafe(credentials)) + credLine + "\n");
+
+            String name = email.isEmpty() ? user : user;
+            StringBuilder gitConfig = new StringBuilder();
+            gitConfig.append("[credential]\n\thelper = store\n");
+            gitConfig.append("[user]\n\tname = ").append(name).append("\n");
+            if (!email.isEmpty()) {
+                gitConfig.append("\temail = ").append(email).append("\n");
+            }
+            writeManagedBlock(new File(home, ".gitconfig"), gitConfig.toString());
+
+            StringBuilder bashrc = new StringBuilder();
+            bashrc.append("export GITHUB_TOKEN=\"").append(token).append("\"\n");
+            bashrc.append("export GH_TOKEN=\"").append(token).append("\"\n");
+            writeManagedBlock(new File(home, ".bashrc"), bashrc.toString());
+
+            prefs.edit()
+                .putString("user", user)
+                .putString("email", email)
+                .putBoolean("connected", true)
+                .apply();
+
+            tokenField.setText("");
+            refreshStatus();
+            Toast.makeText(this, "Connected. Open a new session or run: source ~/.bashrc",
+                Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void disconnect() {
+        try {
+            File home = new File(TermuxConstants.TERMUX_HOME_DIR_PATH);
+            File credentials = new File(home, ".git-credentials");
+            if (credentials.exists()) {
+                String filtered = filterOutGithub(readFileSafe(credentials));
+                if (filtered.trim().isEmpty()) {
+                    credentials.delete();
+                } else {
+                    writeFile(credentials, filtered);
+                }
+            }
+            removeManagedBlock(new File(home, ".gitconfig"));
+            removeManagedBlock(new File(home, ".bashrc"));
+
+            prefs.edit().putBoolean("connected", false).apply();
+            refreshStatus();
+            Toast.makeText(this, "Disconnected. Open a new session to apply.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private String filterOutGithub(String content) {
+        if (content.isEmpty()) return "";
+        StringBuilder builder = new StringBuilder();
+        for (String line : content.split("\n")) {
+            if (!line.contains("@github.com") && !line.trim().isEmpty()) {
+                builder.append(line).append("\n");
+            }
+        }
+        return builder.toString();
+    }
+
+    private void writeManagedBlock(File file, String blockBody) throws Exception {
+        String existing = readFileSafe(file);
+        String cleaned = stripManagedBlock(existing);
+        StringBuilder result = new StringBuilder(cleaned);
+        if (result.length() > 0 && result.charAt(result.length() - 1) != '\n') {
+            result.append("\n");
+        }
+        result.append(BEGIN).append("\n").append(blockBody);
+        if (blockBody.length() > 0 && blockBody.charAt(blockBody.length() - 1) != '\n') {
+            result.append("\n");
+        }
+        result.append(END).append("\n");
+        writeFile(file, result.toString());
+    }
+
+    private void removeManagedBlock(File file) throws Exception {
+        if (!file.exists()) return;
+        String cleaned = stripManagedBlock(readFileSafe(file));
+        writeFile(file, cleaned);
+    }
+
+    private String stripManagedBlock(String content) {
+        if (content.isEmpty()) return "";
+        int begin = content.indexOf(BEGIN);
+        if (begin < 0) return content;
+        int end = content.indexOf(END, begin);
+        if (end < 0) {
+            return content.substring(0, begin);
+        }
+        String before = content.substring(0, begin);
+        String after = content.substring(end + END.length());
+        if (after.startsWith("\n")) after = after.substring(1);
+        return before + after;
+    }
+
+    private String readFileSafe(File file) {
+        if (!file.exists()) return "";
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            try (InputStream in = new FileInputStream(file)) {
+                byte[] chunk = new byte[4096];
+                int read;
+                while ((read = in.read(chunk)) != -1) {
+                    buffer.write(chunk, 0, read);
+                }
+            }
+            return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private void writeFile(File file, String content) throws Exception {
+        try (OutputStream out = new FileOutputStream(file)) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+            out.flush();
+        }
+    }
+
+    private TextView label(String text) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextColor(COLOR_DIM);
+        view.setTextSize(13f);
+        view.setPadding(0, dp(10), 0, dp(2));
+        return view;
+    }
+
+    private EditText field(String hint, String value) {
+        EditText edit = new EditText(this);
+        edit.setHint(hint);
+        edit.setHintTextColor(COLOR_DIM);
+        edit.setTextColor(COLOR_TEXT);
+        edit.setInputType(InputType.TYPE_CLASS_TEXT);
+        if (value != null && !value.isEmpty()) edit.setText(value);
+        return edit;
+    }
+
+    private int dp(int value) {
+        return Math.round(getResources().getDisplayMetrics().density * value);
+    }
+}

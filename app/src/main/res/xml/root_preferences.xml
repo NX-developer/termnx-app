@@ -25,6 +25,12 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_github"
+        app:title="GitHub"
+        app:summary="Connect your account for git and AI CLI tools"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termnx_web"
         app:title="Web dashboard"
         app:summary="Control this terminal from a browser (token protected)"
