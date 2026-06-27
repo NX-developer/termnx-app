@@ -84,6 +84,14 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxFilesPreference = findPreference("termnx_files");
+            if (termnxFilesPreference != null) {
+                termnxFilesPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.files.TermnxFileManagerActivity.class));
+                    return true;
+                });
+            }
+
             Preference termnxPerfPreference = findPreference("termnx_perf");
             if (termnxPerfPreference != null) {
                 termnxPerfPreference.setOnPreferenceClickListener(preference -> {
