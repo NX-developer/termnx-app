@@ -180,6 +180,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private String mTermnxVideoUri;
     private android.animation.ValueAnimator mTermnxBgRainbowAnimator;
     private android.animation.ValueAnimator mTermnxTextRainbowAnimator;
+    private boolean mTermnxUnlocked = false;
+    private boolean mTermnxAuthInProgress = false;
+    private android.widget.TextView mTermnxStatusBar;
+    private android.os.Handler mTermnxStatusHandler;
+    private Runnable mTermnxStatusRunnable;
 
 
     private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
@@ -314,6 +319,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         Logger.logVerbose(LOG_TAG, "onResume");
 
+        maybeShowAppLock();
+
         if (mIsInvalidState) return;
 
         if (mTermuxTerminalSessionActivityClient != null)
@@ -378,6 +385,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             stopTermnxTextRainbow();
         }
 
+        applyTermnxStatusBar();
+
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(this, LOG_TAG);
@@ -403,6 +412,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
         stopTermnxBgRainbow();
         stopTermnxTextRainbow();
+        stopTermnxStatusUpdates();
+        if (!mTermnxAuthInProgress) mTermnxUnlocked = false;
 
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onStop();
@@ -425,6 +436,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         releaseTermnxVideoPlayer();
         stopTermnxBgRainbow();
         stopTermnxTextRainbow();
+        stopTermnxStatusUpdates();
 
         if (mIsInvalidState) return;
 
@@ -1046,6 +1058,139 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTermnxTextRainbowAnimator.cancel();
             mTermnxTextRainbowAnimator = null;
         }
+    }
+
+    private void maybeShowAppLock() {
+        com.termux.app.feature.TermnxFeaturePrefs prefs = new com.termux.app.feature.TermnxFeaturePrefs(this);
+        if (!prefs.isAppLockEnabled() || mTermnxUnlocked || mTermnxAuthInProgress) {
+            return;
+        }
+        int authenticators = androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+            | androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
+        try {
+            int canAuth = androidx.biometric.BiometricManager.from(this).canAuthenticate(authenticators);
+            if (canAuth != androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS) {
+                mTermnxUnlocked = true;
+                return;
+            }
+            mTermnxAuthInProgress = true;
+            androidx.biometric.BiometricPrompt prompt = new androidx.biometric.BiometricPrompt(this,
+                androidx.core.content.ContextCompat.getMainExecutor(this),
+                new androidx.biometric.BiometricPrompt.AuthenticationCallback() {
+                    @Override
+                    public void onAuthenticationSucceeded(androidx.biometric.BiometricPrompt.AuthenticationResult result) {
+                        mTermnxUnlocked = true;
+                        mTermnxAuthInProgress = false;
+                    }
+
+                    @Override
+                    public void onAuthenticationError(int errorCode, CharSequence errString) {
+                        mTermnxAuthInProgress = false;
+                        if (errorCode == androidx.biometric.BiometricPrompt.ERROR_NEGATIVE_BUTTON
+                            || errorCode == androidx.biometric.BiometricPrompt.ERROR_USER_CANCELED
+                            || errorCode == androidx.biometric.BiometricPrompt.ERROR_CANCELED) {
+                            moveTaskToBack(true);
+                        }
+                    }
+                });
+            androidx.biometric.BiometricPrompt.PromptInfo info = new androidx.biometric.BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Unlock Termnx")
+                .setSubtitle("Authenticate to continue")
+                .setAllowedAuthenticators(authenticators)
+                .build();
+            prompt.authenticate(info);
+        } catch (Exception e) {
+            mTermnxAuthInProgress = false;
+            mTermnxUnlocked = true;
+        }
+    }
+
+    private void applyTermnxStatusBar() {
+        com.termux.app.feature.TermnxFeaturePrefs prefs = new com.termux.app.feature.TermnxFeaturePrefs(this);
+        if (!prefs.isStatusBarEnabled()) {
+            stopTermnxStatusUpdates();
+            if (mTermnxStatusBar != null) mTermnxStatusBar.setVisibility(View.GONE);
+            return;
+        }
+        if (mTermnxStatusBar == null) {
+            android.view.ViewGroup root = findViewById(R.id.activity_termux_root_view);
+            if (root == null) return;
+            mTermnxStatusBar = new android.widget.TextView(this);
+            mTermnxStatusBar.setTextColor(0xFF9DA7B3);
+            mTermnxStatusBar.setBackgroundColor(0xCC0B0E14);
+            mTermnxStatusBar.setTextSize(11f);
+            int pad = Math.round(getResources().getDisplayMetrics().density * 4);
+            mTermnxStatusBar.setPadding(pad * 3, pad, pad * 3, pad);
+            root.addView(mTermnxStatusBar, 0, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
+        mTermnxStatusBar.setVisibility(View.VISIBLE);
+        startTermnxStatusUpdates();
+    }
+
+    private void startTermnxStatusUpdates() {
+        if (mTermnxStatusHandler == null) {
+            mTermnxStatusHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        }
+        if (mTermnxStatusRunnable == null) {
+            mTermnxStatusRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    updateTermnxStatusBar();
+                    if (mTermnxStatusHandler != null) {
+                        mTermnxStatusHandler.postDelayed(this, 3000);
+                    }
+                }
+            };
+        }
+        mTermnxStatusHandler.removeCallbacks(mTermnxStatusRunnable);
+        mTermnxStatusHandler.post(mTermnxStatusRunnable);
+    }
+
+    private void stopTermnxStatusUpdates() {
+        if (mTermnxStatusHandler != null && mTermnxStatusRunnable != null) {
+            mTermnxStatusHandler.removeCallbacks(mTermnxStatusRunnable);
+        }
+    }
+
+    private void updateTermnxStatusBar() {
+        if (mTermnxStatusBar == null) return;
+        StringBuilder text = new StringBuilder();
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            android.app.ActivityManager.MemoryInfo mi = new android.app.ActivityManager.MemoryInfo();
+            am.getMemoryInfo(mi);
+            long usedRam = mi.totalMem - mi.availMem;
+            text.append("RAM ").append(formatBytes(usedRam)).append("/").append(formatBytes(mi.totalMem));
+        } catch (Exception ignored) {
+        }
+        try {
+            android.os.StatFs stat = new android.os.StatFs(android.os.Environment.getDataDirectory().getPath());
+            long total = stat.getBlockCountLong() * stat.getBlockSizeLong();
+            long free = stat.getAvailableBlocksLong() * stat.getBlockSizeLong();
+            text.append("   Disk ").append(formatBytes(total - free)).append("/").append(formatBytes(total));
+        } catch (Exception ignored) {
+        }
+        try {
+            android.content.Intent battery = registerReceiver(null,
+                new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
+            if (battery != null) {
+                int temp = battery.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, -1);
+                if (temp > 0) {
+                    text.append("   ").append(temp / 10).append("\u00B0C");
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        mTermnxStatusBar.setText(text.toString());
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes >= 1024L * 1024L * 1024L) {
+            return String.format(java.util.Locale.US, "%.1fGB", bytes / 1024f / 1024f / 1024f);
+        }
+        return String.format(java.util.Locale.US, "%.0fMB", bytes / 1024f / 1024f);
     }
 
     public View getTermuxActivityBottomSpaceView() {

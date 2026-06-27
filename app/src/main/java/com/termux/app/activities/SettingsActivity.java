@@ -92,6 +92,44 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            com.termux.app.feature.TermnxFeaturePrefs featurePrefs = new com.termux.app.feature.TermnxFeaturePrefs(context);
+
+            Preference termnxAppLockPreference = findPreference("termnx_applock");
+            if (termnxAppLockPreference != null) {
+                termnxAppLockPreference.setSummary(featurePrefs.isAppLockEnabled()
+                    ? "On: fingerprint / device PIN required to open"
+                    : "Off: tap to require fingerprint / device PIN");
+                termnxAppLockPreference.setOnPreferenceClickListener(preference -> {
+                    boolean newValue = !featurePrefs.isAppLockEnabled();
+                    featurePrefs.setAppLockEnabled(newValue);
+                    preference.setSummary(newValue
+                        ? "On: fingerprint / device PIN required to open"
+                        : "Off: tap to require fingerprint / device PIN");
+                    android.widget.Toast.makeText(context,
+                        newValue ? "App lock enabled." : "App lock disabled.",
+                        android.widget.Toast.LENGTH_SHORT).show();
+                    return true;
+                });
+            }
+
+            Preference termnxStatusBarPreference = findPreference("termnx_statusbar");
+            if (termnxStatusBarPreference != null) {
+                termnxStatusBarPreference.setSummary(featurePrefs.isStatusBarEnabled()
+                    ? "On: showing RAM, storage and temperature"
+                    : "Off: tap to show RAM, storage and temperature");
+                termnxStatusBarPreference.setOnPreferenceClickListener(preference -> {
+                    boolean newValue = !featurePrefs.isStatusBarEnabled();
+                    featurePrefs.setStatusBarEnabled(newValue);
+                    preference.setSummary(newValue
+                        ? "On: showing RAM, storage and temperature"
+                        : "Off: tap to show RAM, storage and temperature");
+                    android.widget.Toast.makeText(context,
+                        newValue ? "Status bar enabled." : "Status bar disabled.",
+                        android.widget.Toast.LENGTH_SHORT).show();
+                    return true;
+                });
+            }
+
             Preference termnxPerfPreference = findPreference("termnx_perf");
             if (termnxPerfPreference != null) {
                 termnxPerfPreference.setOnPreferenceClickListener(preference -> {

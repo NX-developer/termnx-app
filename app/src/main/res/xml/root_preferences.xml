@@ -19,6 +19,18 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_applock"
+        app:title="App lock"
+        app:summary="Require fingerprint / device PIN to open the app"
+        app:persistent="false"/>
+
+    <Preference
+        app:key="termnx_statusbar"
+        app:title="Status bar"
+        app:summary="Show RAM, storage and temperature at the top"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termnx_theme"
         app:title="Appearance"
         app:summary="Terminal colors and key button colors"
