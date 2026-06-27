@@ -34,6 +34,18 @@ public class TermuxSessionsListViewController extends ArrayAdapter<TermuxSession
     final StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
     final StyleSpan italicSpan = new StyleSpan(Typeface.ITALIC);
 
+    private final java.util.WeakHashMap<TerminalSession, Integer> mSessionNumbers = new java.util.WeakHashMap<>();
+    private int mNextSessionNumber = 1;
+
+    private int sessionNumber(TerminalSession session) {
+        Integer number = mSessionNumbers.get(session);
+        if (number == null) {
+            number = mNextSessionNumber++;
+            mSessionNumbers.put(session, number);
+        }
+        return number;
+    }
+
     public TermuxSessionsListViewController(TermuxActivity activity, List<TermuxSession> sessionList) {
         super(activity.getApplicationContext(), R.layout.item_terminal_sessions_list, sessionList);
         this.mActivity = activity;
@@ -68,7 +80,7 @@ public class TermuxSessionsListViewController extends ArrayAdapter<TermuxSession
         String name = sessionAtRow.mSessionName;
         String sessionTitle = sessionAtRow.getTitle();
 
-        String numberPart = "[" + (position + 1) + "] ";
+        String numberPart = "[" + sessionNumber(sessionAtRow) + "] ";
         String sessionNamePart = (TextUtils.isEmpty(name) ? "" : name);
         String sessionTitlePart = (TextUtils.isEmpty(sessionTitle) ? "" : ((sessionNamePart.isEmpty() ? "" : "\n") + sessionTitle));
 
