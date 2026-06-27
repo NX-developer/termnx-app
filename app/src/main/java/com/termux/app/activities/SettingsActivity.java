@@ -94,6 +94,14 @@ public class SettingsActivity extends AppCompatActivity {
 
             com.termux.app.feature.TermnxFeaturePrefs featurePrefs = new com.termux.app.feature.TermnxFeaturePrefs(context);
 
+            Preference termnxQuickPreference = findPreference("termnx_quick");
+            if (termnxQuickPreference != null) {
+                termnxQuickPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.quick.TermnxQuickCommandsActivity.class));
+                    return true;
+                });
+            }
+
             Preference termnxAppLockPreference = findPreference("termnx_applock");
             if (termnxAppLockPreference != null) {
                 termnxAppLockPreference.setSummary(featurePrefs.isAppLockEnabled()

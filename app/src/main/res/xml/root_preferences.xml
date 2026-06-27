@@ -19,6 +19,12 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_quick"
+        app:title="Quick commands"
+        app:summary="Home-screen widget to run commands with one tap"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termnx_applock"
         app:title="App lock"
         app:summary="Require fingerprint / device PIN to open the app"

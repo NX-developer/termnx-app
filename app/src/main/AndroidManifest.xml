@@ -141,6 +141,23 @@
             android:theme="@style/Theme.TermuxApp.DayNight.DarkActionBar" />
 
         <activity
+            android:name=".app.quick.TermnxQuickCommandsActivity"
+            android:exported="false"
+            android:label="Quick Commands"
+            android:theme="@style/Theme.TermuxApp.DayNight.DarkActionBar" />
+
+        <receiver
+            android:name=".app.quick.TermnxWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/termnx_widget_info" />
+        </receiver>
+
+        <activity
             android:name=".shared.activities.ReportActivity"
             android:theme="@style/Theme.MarkdownViewActivity.DayNight"
             android:documentLaunchMode="intoExisting" />

@@ -182,6 +182,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private android.animation.ValueAnimator mTermnxTextRainbowAnimator;
     private boolean mTermnxUnlocked = false;
     private boolean mTermnxAuthInProgress = false;
+    private String mTermnxPendingCommand;
     private android.widget.TextView mTermnxStatusBar;
     private android.os.Handler mTermnxStatusHandler;
     private Runnable mTermnxStatusRunnable;
@@ -387,6 +388,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         applyTermnxStatusBar();
 
+        runTermnxPendingCommandIfReady();
+
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(this, LOG_TAG);
@@ -482,6 +485,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         final Intent intent = getIntent();
         setIntent(null);
 
+        if (intent != null && intent.hasExtra(com.termux.app.quick.TermnxWidgetProvider.EXTRA_RUN_COMMAND)) {
+            mTermnxPendingCommand = intent.getStringExtra(com.termux.app.quick.TermnxWidgetProvider.EXTRA_RUN_COMMAND);
+        }
+
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
                 TermuxInstaller.setupBootstrapIfNeeded(TermuxActivity.this, () -> {
@@ -515,6 +522,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
         mTermuxService.setTermuxTerminalSessionClient(mTermuxTerminalSessionActivityClient);
+
+        runTermnxPendingCommandIfReady();
     }
 
     @Override
@@ -1191,6 +1200,30 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             return String.format(java.util.Locale.US, "%.1fGB", bytes / 1024f / 1024f / 1024f);
         }
         return String.format(java.util.Locale.US, "%.0fMB", bytes / 1024f / 1024f);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent != null && intent.hasExtra(com.termux.app.quick.TermnxWidgetProvider.EXTRA_RUN_COMMAND)) {
+            mTermnxPendingCommand = intent.getStringExtra(com.termux.app.quick.TermnxWidgetProvider.EXTRA_RUN_COMMAND);
+            runTermnxPendingCommandIfReady();
+        }
+    }
+
+    private void runTermnxPendingCommandIfReady() {
+        if (mTermnxPendingCommand == null) return;
+        final TerminalSession session = getCurrentSession();
+        if (session == null) return;
+        final String command = mTermnxPendingCommand;
+        mTermnxPendingCommand = null;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                byte[] data = (command + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                session.write(data, 0, data.length);
+            } catch (Exception ignored) {
+            }
+        }, 400);
     }
 
     public View getTermuxActivityBottomSpaceView() {

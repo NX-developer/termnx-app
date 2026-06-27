@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E60B0E14"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/termnx_widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Termnx Quick Commands"
+        android:textColor="#768390"
+        android:textSize="12sp"
+        android:paddingBottom="4dp" />
+
+    <Button
+        android:id="@+id/termnx_qc_0"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#D7DEE8"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/termnx_qc_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#D7DEE8"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/termnx_qc_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#D7DEE8"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/termnx_qc_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#D7DEE8"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/termnx_qc_4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#D7DEE8"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/termnx_qc_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#D7DEE8"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/termnx_widget_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add commands in Termnx settings"
+        android:textColor="#768390"
+        android:textSize="11sp"
+        android:visibility="gone" />
+
+</LinearLayout>
