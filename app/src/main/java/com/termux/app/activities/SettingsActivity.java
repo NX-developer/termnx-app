@@ -102,6 +102,14 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference termnxWebPreference = findPreference("termnx_web");
+            if (termnxWebPreference != null) {
+                termnxWebPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new android.content.Intent(context, com.termux.app.web.TermnxWebActivity.class));
+                    return true;
+                });
+            }
+
             Preference termnxAppLockPreference = findPreference("termnx_applock");
             if (termnxAppLockPreference != null) {
                 termnxAppLockPreference.setSummary(featurePrefs.isAppLockEnabled()

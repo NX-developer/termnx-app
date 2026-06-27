@@ -146,6 +146,12 @@
             android:label="Quick Commands"
             android:theme="@style/Theme.TermuxApp.DayNight.DarkActionBar" />
 
+        <activity
+            android:name=".app.web.TermnxWebActivity"
+            android:exported="false"
+            android:label="Web Dashboard"
+            android:theme="@style/Theme.TermuxApp.DayNight.DarkActionBar" />
+
         <receiver
             android:name=".app.quick.TermnxWidgetProvider"
             android:exported="true">

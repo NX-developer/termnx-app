@@ -25,6 +25,12 @@
         app:persistent="false"/>
 
     <Preference
+        app:key="termnx_web"
+        app:title="Web dashboard"
+        app:summary="Control this terminal from a browser (token protected)"
+        app:persistent="false"/>
+
+    <Preference
         app:key="termnx_applock"
         app:title="App lock"
         app:summary="Require fingerprint / device PIN to open the app"
