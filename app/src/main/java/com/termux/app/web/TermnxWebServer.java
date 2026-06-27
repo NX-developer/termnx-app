@@ -174,7 +174,11 @@ public class TermnxWebServer {
                 writeResponse(out, "400 Bad Request", "text/plain", "No command");
                 return;
             }
-            CommandRunner.Result result = CommandRunner.run(appContext, command, 60);
+            String stdin = form.get("stdin");
+            if (stdin != null && !stdin.isEmpty() && !stdin.endsWith("\n")) {
+                stdin = stdin + "\n";
+            }
+            CommandRunner.Result result = CommandRunner.run(appContext, command, 60, stdin);
             String output = result.stdout != null ? result.stdout : "";
             if (output.length() > 100000) {
                 output = output.substring(0, 100000) + "\n... (truncated)";
@@ -269,7 +273,9 @@ public class TermnxWebServer {
             + "<p class='dim'>Anyone with this URL and the access code can run commands on this device. Stop the server in the app when done.</p>"
             + "<input id='token' placeholder='Access code'>"
             + "<h3>Run command</h3>"
-            + "<input id='cmd' placeholder='e.g. ls -la' onkeydown='if(event.key==\"Enter\")run()'>"
+            + "<input id='cmd' placeholder='e.g. python downloader.py' onkeydown='if(event.key==\"Enter\")run()'>"
+            + "<textarea id='stdin' rows='3' placeholder='Input sent to the command (stdin), one answer per line. "
+            + "e.g. the links the script asks for'></textarea>"
             + "<button onclick='run()'>Run</button><pre id='out'></pre>"
             + "<h3>Terminal colors</h3>"
             + "<div class='row'><input id='bg' placeholder='Background #101418'><input id='fg' placeholder='Text #d7dee8'></div>"
@@ -278,8 +284,9 @@ public class TermnxWebServer {
             + "var p=new URLSearchParams(location.search);if(p.get('token'))document.getElementById('token').value=p.get('token');"
             + "function enc(o){return Object.keys(o).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(o[k])).join('&')}"
             + "function run(){var t=document.getElementById('token').value;var c=document.getElementById('cmd').value;"
+            + "var s=document.getElementById('stdin').value;"
             + "document.getElementById('out').textContent='Running...';"
-            + "fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:enc({token:t,command:c})})"
+            + "fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:enc({token:t,command:c,stdin:s})})"
             + ".then(r=>r.text()).then(x=>{document.getElementById('out').textContent=x}).catch(e=>{document.getElementById('out').textContent=''+e})}"
             + "function theme(){var t=document.getElementById('token').value;var bg=document.getElementById('bg').value;var fg=document.getElementById('fg').value;"
             + "fetch('/api/theme',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:enc({token:t,background:bg,foreground:fg})})"

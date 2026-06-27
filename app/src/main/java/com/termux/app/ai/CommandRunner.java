@@ -26,9 +26,28 @@ public class CommandRunner {
     }
 
     public static Result run(@NonNull Context context, @NonNull String command, int timeoutSeconds) {
+        return run(context, command, timeoutSeconds, null);
+    }
+
+    public static Result run(@NonNull Context context, @NonNull String command, int timeoutSeconds, String stdin) {
+        String redirect = "";
+        if (stdin != null && !stdin.isEmpty()) {
+            try {
+                java.io.File dir = new java.io.File(TermuxConstants.TERMUX_HOME_DIR_PATH, ".termnx");
+                if (!dir.exists()) dir.mkdirs();
+                java.io.File stdinFile = new java.io.File(dir, ".stdin_" + System.currentTimeMillis());
+                try (java.io.OutputStream out = new java.io.FileOutputStream(stdinFile)) {
+                    out.write(stdin.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                }
+                stdinFile.deleteOnExit();
+                redirect = " < " + shellQuote(stdinFile.getAbsolutePath());
+            } catch (Exception ignored) {
+            }
+        }
+
         String wrapped = "export PATH=" + TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + ":$PATH\n" +
             "timeout " + timeoutSeconds + " " + TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/bash -lc " +
-            shellQuote(command) + " 2>&1\n";
+            shellQuote(command) + redirect + " 2>&1\n";
 
         ExecutionCommand executionCommand = new ExecutionCommand(-1,
             TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/bash", null, wrapped,

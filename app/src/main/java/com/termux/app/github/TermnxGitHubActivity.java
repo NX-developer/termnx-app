@@ -39,6 +39,7 @@ public class TermnxGitHubActivity extends AppCompatActivity {
     private EditText userField;
     private EditText emailField;
     private EditText tokenField;
+    private android.widget.CheckBox envCheck;
     private TextView statusView;
 
     @Override
@@ -91,6 +92,21 @@ public class TermnxGitHubActivity extends AppCompatActivity {
         tokenField = field("ghp_...", "");
         tokenField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         content.addView(tokenField);
+
+        envCheck = new android.widget.CheckBox(this);
+        envCheck.setText("Also set GITHUB_TOKEN environment variable");
+        envCheck.setTextColor(COLOR_TEXT);
+        envCheck.setChecked(prefs.getBoolean("env", false));
+        content.addView(envCheck);
+
+        TextView envHint = new TextView(this);
+        envHint.setText("Off by default. Git authenticates through a credential helper without exposing the "
+            + "raw token, so AI tools that scan the environment will not see it. Turn this on only if a tool "
+            + "(like gh) needs the GITHUB_TOKEN variable.");
+        envHint.setTextColor(COLOR_DIM);
+        envHint.setTextSize(11f);
+        envHint.setPadding(0, 0, 0, dp(4));
+        content.addView(envHint);
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -182,18 +198,24 @@ public class TermnxGitHubActivity extends AppCompatActivity {
             }
             writeManagedBlock(new File(home, ".gitconfig"), gitConfig.toString());
 
-            String tokenPath = tokenFile.getAbsolutePath();
-            StringBuilder bashrc = new StringBuilder();
-            bashrc.append("if [ -f \"").append(tokenPath).append("\" ]; then\n");
-            bashrc.append("  export GITHUB_TOKEN=\"$(cat \"").append(tokenPath).append("\")\"\n");
-            bashrc.append("  export GH_TOKEN=\"$GITHUB_TOKEN\"\n");
-            bashrc.append("fi\n");
-            writeManagedBlock(new File(home, ".bashrc"), bashrc.toString());
+            boolean exposeEnv = envCheck.isChecked();
+            if (exposeEnv) {
+                String tokenPath = tokenFile.getAbsolutePath();
+                StringBuilder bashrc = new StringBuilder();
+                bashrc.append("if [ -f \"").append(tokenPath).append("\" ]; then\n");
+                bashrc.append("  export GITHUB_TOKEN=\"$(cat \"").append(tokenPath).append("\")\"\n");
+                bashrc.append("  export GH_TOKEN=\"$GITHUB_TOKEN\"\n");
+                bashrc.append("fi\n");
+                writeManagedBlock(new File(home, ".bashrc"), bashrc.toString());
+            } else {
+                removeManagedBlock(new File(home, ".bashrc"));
+            }
 
             prefs.edit()
                 .putString("user", user)
                 .putString("email", email)
                 .putBoolean("connected", true)
+                .putBoolean("env", exposeEnv)
                 .apply();
 
             tokenField.setText("");
