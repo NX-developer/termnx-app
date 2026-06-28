@@ -1,6 +1,7 @@
 package com.termux.app.github;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.InputType;
@@ -80,6 +81,30 @@ public class TermnxGitHubActivity extends AppCompatActivity {
         statusView.setPadding(0, dp(4), 0, dp(8));
         content.addView(statusView);
 
+        content.addView(label("Sign in with GitHub CLI (gh)"));
+        TextView ghHint = new TextView(this);
+        ghHint.setText("Recommended. Installs gh if needed and starts an interactive browser-based login "
+            + "in the terminal, then sets git to use it. No token to paste. Follow the one-time code and URL "
+            + "shown in the terminal.");
+        ghHint.setTextColor(COLOR_DIM);
+        ghHint.setTextSize(11f);
+        ghHint.setPadding(0, 0, 0, dp(4));
+        content.addView(ghHint);
+
+        Button ghButton = new Button(this);
+        ghButton.setText("Sign in with gh");
+        ghButton.setOnClickListener(v -> startGhLogin());
+        ghButton.setLayoutParams(new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        content.addView(ghButton);
+
+        TextView divider = new TextView(this);
+        divider.setText("Or connect with a Personal Access Token");
+        divider.setTextColor(COLOR_DIM);
+        divider.setTextSize(13f);
+        divider.setPadding(0, dp(16), 0, dp(2));
+        content.addView(divider);
+
         content.addView(label("GitHub username"));
         userField = field("e.g. NX-developer", prefs.getString("user", ""));
         content.addView(userField);
@@ -138,6 +163,16 @@ public class TermnxGitHubActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void startGhLogin() {
+        String command = "pkg install -y gh && gh auth login && gh auth setup-git";
+        Intent intent = new Intent(this, com.termux.app.TermuxActivity.class);
+        intent.putExtra(com.termux.app.quick.TermnxWidgetProvider.EXTRA_RUN_COMMAND, command);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        Toast.makeText(this, "Starting gh login in the terminal. Follow the prompts there.",
+            Toast.LENGTH_LONG).show();
     }
 
     private void refreshStatus() {
